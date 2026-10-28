@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.venv/
+env/
+venv/
+
+# Next.js build
+.next/
+out/
+build/
+dist/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+next-env.d.ts
+
+# Zip packages
+*.zip
+*.tar.gz
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
