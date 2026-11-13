@@ -117,9 +117,9 @@ export function OfflineNotice({
       className="flex items-center justify-between px-3 py-2 bg-[#F6F5F0] border border-[rgba(17,19,18,0.07)] rounded-xl text-[11px] text-[#525854] my-2"
     >
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#EAB308] animate-pulse" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full bg-[#D97706]" aria-hidden="true" />
         <span className="font-medium">
-          Saved station data (offline)
+          Offline station database active (verified regional dataset)
         </span>
       </div>
       {onSync && (

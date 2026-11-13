@@ -6,7 +6,6 @@ import {
   Compass,
   Navigation,
   Zap,
-  Car,
 } from "lucide-react";
 
 export type DriverTab = "home" | "explore" | "journeys" | "charging" | "garage";
@@ -27,12 +26,11 @@ export function DriverNav({
     { id: "explore", label: "Explore", icon: Compass },
     { id: "journeys", label: "Journeys", icon: Navigation },
     { id: "charging", label: "Charging", icon: Zap },
-    { id: "garage", label: "Garage", icon: Car },
   ];
 
   return (
     <nav
-      className="sticky bottom-0 left-0 right-0 z-50 w-full flex flex-col items-center mt-auto select-none pb-safe"
+      className="sticky bottom-0 left-0 right-0 z-30 w-full flex flex-col items-center mt-auto select-none pb-safe"
       style={{
         background: "rgba(250, 249, 246, 0.96)",
         backdropFilter: "blur(24px)",

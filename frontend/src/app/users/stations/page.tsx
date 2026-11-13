@@ -15,6 +15,7 @@ import { VehicleCockpit, EVVehicle } from "@/components/driver/VehicleCockpit";
 import { JourneyPlanner } from "@/components/driver/JourneyPlanner";
 import { ChargingConsole } from "@/components/driver/ChargingConsole";
 import { GarageFleet } from "@/components/driver/GarageFleet";
+import { VehicleManager } from "@/components/driver/VehicleManager";
 import {
   LoadingSkeleton,
   EmptyState,
@@ -151,6 +152,16 @@ export default function EVVerseDriverPage() {
   const [hvacActive, setHvacActive] = useState(true);
   const [doorsLocked, setDoorsLocked] = useState(true);
   const [isPreconditioning, setIsPreconditioning] = useState(false);
+  const [isVehicleManagerOpen, setIsVehicleManagerOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("manage") === "1" || params.get("garage") === "1") {
+        setIsVehicleManagerOpen(true);
+      }
+    }
+  }, []);
 
   // User Location (centered relative to selected city)
   const [userLocation, setUserLocation] = useState<[number, number]>([
@@ -520,6 +531,10 @@ export default function EVVerseDriverPage() {
   // Garage Vehicle Management Handlers
   const handleSelectVehicle = (id: string) => {
     setActiveVehicleId(id);
+    const target = vehicles.find((v) => v.id === id);
+    if (target) {
+      setCurrentBatteryPct(target.currentBatteryPct);
+    }
     syncActiveVehicleId(id);
   };
 
@@ -530,6 +545,7 @@ export default function EVVerseDriverPage() {
       saveStoredVehicles(updated);
       setActiveVehicleId(newVehicle.id);
       saveStoredActiveVehicleId(newVehicle.id);
+      setCurrentBatteryPct(newVehicle.currentBatteryPct);
       setGarageErrorMessage(null);
       await syncAddVehicle(newVehicle);
       await syncActiveVehicleId(newVehicle.id);
@@ -543,6 +559,9 @@ export default function EVVerseDriverPage() {
       const updated = vehicles.map((v) => (v.id === updatedVehicle.id ? updatedVehicle : v));
       setVehicles(updated);
       saveStoredVehicles(updated);
+      if (updatedVehicle.id === activeVehicleId) {
+        setCurrentBatteryPct(updatedVehicle.currentBatteryPct);
+      }
       setGarageErrorMessage(null);
       await syncUpdateVehicle(updatedVehicle);
     } catch (err: unknown) {
@@ -696,31 +715,41 @@ export default function EVVerseDriverPage() {
       }}
     >
       {/* ── Studio Toolbar (visible on desktop) ── */}
-      <div className="hidden md:flex w-full max-w-5xl items-center justify-between px-6 py-3 border-b border-[rgba(255,255,255,0.08)] text-xs text-[#8C938E] z-50">
+      <div className={`hidden md:flex w-full max-w-5xl items-center justify-between px-6 py-3 border-b text-xs z-50 transition-colors ${
+        isFramed
+          ? "border-[rgba(255,255,255,0.08)] text-[#8C938E]"
+          : "border-black/[0.08] text-[#525854]"
+      }`}>
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/15 transition-all border border-white/10"
-            title="Return to EVverse Landing Page"
-          >
-            <ArrowLeft size={13} />
-            <span>Back to EVverse</span>
-          </Link>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#C8F369]" />
-            <span className="font-bold text-white tracking-tight">EV VERSE MOBILE DRIVER APP</span>
+            <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
+            <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
+              EV VERSE MOBILE DRIVER APP
+            </span>
           </div>
-          <span className="text-[11px] bg-white/10 text-white/80 px-2 py-0.5 rounded-md font-mono">
+          <span className={`text-[11px] px-2 py-0.5 rounded-md font-mono ${
+            isFramed
+              ? "bg-white/10 text-white/80"
+              : "bg-black/[0.06] text-[#525854] font-semibold"
+          }`}>
             Port 3001
           </span>
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1 bg-[#1A1D1B] p-1 rounded-xl border border-[rgba(255,255,255,0.08)]">
+        <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors ${
+          isFramed
+            ? "bg-[#1A1D1B] border-[rgba(255,255,255,0.08)]"
+            : "bg-[#EFEFEA] border-black/[0.08]"
+        }`}>
           <button
             onClick={() => setViewMode("frame")}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "frame" ? "bg-[#C8F369] text-[#111312] shadow-xs" : "text-[#8C938E] hover:text-white"
+              viewMode === "frame"
+                ? "bg-[#C8F369] text-[#111312] shadow-xs"
+                : isFramed
+                ? "text-[#8C938E] hover:text-white"
+                : "text-[#767D78] hover:text-[#111312]"
             }`}
           >
             Phone Frame
@@ -728,7 +757,11 @@ export default function EVVerseDriverPage() {
           <button
             onClick={() => setViewMode("fluid")}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "fluid" ? "bg-white text-[#111312] shadow-xs" : "text-[#8C938E] hover:text-white"
+              viewMode === "fluid"
+                ? "bg-white text-[#111312] shadow-xs"
+                : isFramed
+                ? "text-[#8C938E] hover:text-white"
+                : "text-[#767D78] hover:text-[#111312]"
             }`}
           >
             Mobile Column
@@ -736,7 +769,11 @@ export default function EVVerseDriverPage() {
           <button
             onClick={() => setViewMode("expanded")}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "expanded" ? "bg-white text-[#111312] shadow-xs" : "text-[#8C938E] hover:text-white"
+              viewMode === "expanded"
+                ? "bg-white text-[#111312] shadow-xs"
+                : isFramed
+                ? "text-[#8C938E] hover:text-white"
+                : "text-[#767D78] hover:text-[#111312]"
             }`}
           >
             Expanded View
@@ -925,7 +962,7 @@ export default function EVVerseDriverPage() {
 
               {/* ── Top Driver Status Header ─────────────────────────────────────── */}
               <header
-                className="shrink-0 z-30 px-3 sm:px-4 py-2 sm:py-2.5 border-b flex items-center justify-between"
+                className="shrink-0 z-30 px-3 sm:px-4 py-2.5 border-b flex items-center justify-between"
                 style={{
                   background: "rgba(250, 249, 246, 0.96)",
                   backdropFilter: "blur(20px)",
@@ -934,156 +971,67 @@ export default function EVVerseDriverPage() {
                 }}
                 aria-label="Driver App Header"
               >
-              {/* Brand Logo, Model & Back Navigation */}
-              <div className="flex items-center gap-2 min-w-0">
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] p-2 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312]"
-                  title="Return to Home Page"
-                  aria-label="Back"
-                >
-                  <ArrowLeft size={14} />
-                </Link>
-                <div className="w-px h-6 bg-[rgba(17,19,18,0.08)] shrink-0" />
+                {/* Brand Logo & EVverse Title (Clean, Balanced & Uncrowded) */}
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="relative w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
+                  {activeTab !== "home" && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("home")}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] p-2 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312] cursor-pointer"
+                      title="Return to Home Cockpit"
+                      aria-label="Back to Home"
+                    >
+                      <ArrowLeft size={14} />
+                    </button>
+                  )}
+                  <div className="relative w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center">
                     <Image
                       src="/images/evverse-logo.png"
                       alt="EVverse Logo"
-                      width={44}
-                      height={44}
+                      width={36}
+                      height={36}
                       priority
                       className="object-contain w-full h-full"
                     />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-mono font-semibold text-[#8C938E] leading-none block truncate max-w-[100px] xs:max-w-[130px] sm:max-w-[180px]">
-                      {activeVehicle.make} {activeVehicle.model}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-base sm:text-lg font-bold tracking-tight text-[#111312] leading-none">
+                      EVverse
+                    </span>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-[#111312] text-[#C8F369] leading-none">
+                      2.0
                     </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Header Right Controls: Guide Link, City Selector & Live Grid Indicator */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                {/* EV Knowledge Hub Guide */}
-                <Link
-                  href="/users/knowledge"
-                  className="flex items-center justify-center text-[#525854] hover:text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] p-2 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors cursor-pointer min-h-[34px] min-w-[34px] focus-visible:outline-2 focus-visible:outline-[#111312]"
-                  title="EV Knowledge Hub Guide"
-                  aria-label="Open EV Knowledge Hub Guide"
-                >
-                  <BookOpen size={13} className="text-[#16A34A]" />
-                </Link>
+                {/* Header Right Controls: City Selector & Live Grid Indicator */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* City Selector */}
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    aria-label="Select City"
+                    className="text-xs font-semibold bg-white border border-[rgba(17,19,18,0.08)] text-[#111312] rounded-xl px-2.5 py-1.5 focus:outline-hidden cursor-pointer shadow-2xs hover:bg-[#F5F4EF] transition-colors min-h-[34px]"
+                  >
+                    {Object.keys(CITY_CONFIGS).map((cityName) => (
+                      <option key={cityName} value={cityName}>
+                        {cityName}
+                      </option>
+                    ))}
+                  </select>
 
-                {/* City Selector */}
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  aria-label="Select City"
-                  className="text-xs font-semibold bg-white border border-[rgba(17,19,18,0.08)] text-[#111312] rounded-xl px-2 sm:px-2.5 py-1.5 focus:outline-hidden cursor-pointer shadow-2xs hover:bg-[#F5F4EF] transition-colors min-h-[34px]"
-                >
-                  {Object.keys(CITY_CONFIGS).map((cityName) => (
-                    <option key={cityName} value={cityName}>
-                      {cityName}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Live Status Indicator */}
-                <div
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    isLive ? "bg-[#16A34A]" : "bg-[#EAB308]"
-                  }`}
-                  title={isLive ? "Open Charge Map Live" : "Verified Regional Baseline"}
-                  aria-label={isLive ? "Connected to live grid" : "Regional baseline data"}
-                />
-              </div>
-            </header>
-
-            {/* ── Monad Testnet Driver Payment Panel (when no active spot booking) ── */}
-            {!activeSpotBooking && (
-              <div className="mx-3 sm:mx-4 mt-2.5 p-3 bg-white border border-black/[0.08] rounded-2xl flex items-center justify-between text-xs shadow-xs animate-in slide-in-from-top-1 gap-2.5">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-8 h-8 rounded-xl bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                    <Coins size={15} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-[#111312]">Monad Testnet</span>
-                      <span className="text-[10px] font-mono text-[#2563EB] bg-[#EFF6FF] px-1.5 py-0.2 rounded border border-[#BFDBFE]">
-                        Chain 10143
-                      </span>
-                    </div>
-                    {/* Hold Amount & Connection Status without truncation cutoffs */}
-                    <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[#525854] flex-wrap">
-                      <span className="font-medium text-[#111312]">
-                        Hold Deposit: <strong className="font-mono text-[#16A34A]">₹49</strong> (0.025 MON)
-                      </span>
-                      <span className="text-black/20 hidden xs:inline">•</span>
-                      <span
-                        title={
-                          driverWalletAddress
-                            ? isDriverMonadActive
-                              ? "Connected to Monad Testnet (Chain ID 10143)"
-                              : "Wrong Network: Wallet is not on Monad Testnet"
-                            : "Wallet Disconnected"
-                        }
-                        className="inline-flex items-center gap-1 font-mono text-[10.5px]"
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${
-                            driverWalletAddress
-                              ? isDriverMonadActive
-                                ? "bg-[#16A34A]"
-                                : "bg-[#EAB308]"
-                              : "bg-[#EF4444]"
-                          }`}
-                        />
-                        <span className="truncate max-w-[90px] xs:max-w-[120px]">
-                          {driverWalletAddress
-                            ? truncateAddress(driverWalletAddress)
-                            : "Disconnected"}
-                        </span>
-                        {driverWalletAddress && !isDriverMonadActive && (
-                          <span className="text-[9px] text-[#B45309] font-sans font-bold bg-[#FEF3C7] px-1 py-0.2 rounded border border-[#FDE68A]">
-                            Wrong Net
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Grid Data Status Indicator */}
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      isLive ? "bg-[#16A34A]" : "bg-[#D97706]"
+                    }`}
+                    title={isLive ? "Grid Data: Live Open Charge Map Feed" : "Grid Data: Offline Verified Regional Baseline"}
+                    aria-label={isLive ? "Connected to live grid feed" : "Offline regional baseline dataset"}
+                  />
                 </div>
+              </header>
 
-                {/* ONE Single Primary Action at a time */}
-                <div className="shrink-0">
-                  {!driverWalletAddress ? (
-                    <button
-                      type="button"
-                      onClick={handleDriverConnectWallet}
-                      disabled={isDriverConnectingWallet}
-                      aria-label="Connect Web3 Wallet for Monad Payment"
-                      className="min-h-[34px] px-3 py-1.5 bg-[#111312] hover:bg-[#252826] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-[#111312]"
-                    >
-                      <Wallet size={13} className="text-[#C8F369] shrink-0" />
-                      <span>{isDriverConnectingWallet ? "Connecting..." : "Connect Wallet"}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsPayModalOpen(true)}
-                      aria-label="Continue to Monad Payment"
-                      className="min-h-[34px] px-3.5 py-1.5 bg-[#111312] hover:bg-[#252826] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-[#111312]"
-                    >
-                      <Zap size={13} className="text-[#C8F369] shrink-0" />
-                      <span>Continue to Payment</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Active Spot Booking Banner */}
+{/* Active Spot Booking Banner */}
             {activeSpotBooking && (
               <div
                 role="button"
@@ -1143,7 +1091,7 @@ export default function EVVerseDriverPage() {
                         startNavigation(nearestUltraStation.raw);
                       }
                     }}
-                    onOpenGarage={() => setActiveTab("garage")}
+                    onOpenGarage={() => setIsVehicleManagerOpen(true)}
                     onOpenJourneyPlanner={() => setActiveTab("journeys")}
                   />
                 </div>
@@ -1170,7 +1118,8 @@ export default function EVVerseDriverPage() {
                 />
 
                 {/* Floating Top Controls (Search & Quick Filters) */}
-                <div className="absolute top-3 left-3 right-3 z-30 space-y-2 pointer-events-auto">
+                {!isStationDetailOpen && !isNavigating && (
+                  <div className="absolute top-3 left-3 right-3 z-20 space-y-2 pointer-events-auto">
                   {/* Search Bar */}
                   <div className="relative w-full">
                     <Search
@@ -1272,10 +1221,11 @@ export default function EVVerseDriverPage() {
                     )}
                   </div>
                 </div>
+                )}
 
                 {/* In-app Navigation HUD Banner */}
                 {isNavigating && navStation && (
-                  <div className="absolute top-28 left-3 right-3 z-30 bg-[#111312] text-white rounded-2xl p-3.5 shadow-xl flex items-center justify-between border border-[rgba(255,255,255,0.1)]">
+                  <div className="absolute top-3 left-3 right-3 z-30 bg-[#111312] text-white rounded-2xl p-3.5 shadow-xl flex items-center justify-between border border-[rgba(255,255,255,0.1)]">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-xl bg-[rgba(200,243,105,0.2)] flex items-center justify-center text-[#C8F369]">
                         <Navigation size={16} />
@@ -1306,14 +1256,14 @@ export default function EVVerseDriverPage() {
 
                 {/* Empty State Overlay when 0 stations found */}
                 {filteredStations.length === 0 && !loading && (
-                  <div className="absolute inset-x-3 bottom-20 z-30">
+                  <div className="absolute inset-x-3 bottom-20 z-20">
                     <EmptyState onReset={handleResetFilters} />
                   </div>
                 )}
 
                 {/* Bottom Quick Hubs Drawer / Peek Card */}
-                {!isStationDetailOpen && filteredStations.length > 0 && (
-                  <div className="absolute bottom-16 left-3 right-3 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
+                {!isStationDetailOpen && !isNavigating && filteredStations.length > 0 && (
+                  <div className="absolute bottom-16 left-3 right-3 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C938E] font-semibold">
                         {filteredStations.length} Charging Stations
@@ -1461,32 +1411,43 @@ export default function EVVerseDriverPage() {
             </div>
           )}
 
-          {/* ═════════ TAB 5: GARAGE (Fleet Registry) ═════════ */}
+          {/* ═════════ TAB 5: GARAGE (Redirected to Dedicated Manager) ═════════ */}
           {activeTab === "garage" && (
             <div className="p-4 flex-1">
-              <GarageFleet
+              <VehicleManager
+                isOpen={true}
+                onClose={() => setActiveTab("home")}
                 vehicles={vehicles}
                 activeVehicleId={activeVehicleId}
                 onSelectVehicle={handleSelectVehicle}
                 onAddVehicle={handleAddVehicle}
                 onUpdateVehicle={handleUpdateVehicle}
                 onRemoveVehicle={handleRemoveVehicle}
-                autoCompatibility={autoCompatibility}
-                onToggleAutoCompatibility={handleToggleAutoCompatibility}
-                isLoading={isGarageLoading}
-                errorMessage={garageErrorMessage}
-                onClearError={() => setGarageErrorMessage(null)}
               />
             </div>
           )}
         </main>
 
-        {/* ── Fixed Bottom Navigation Bar ──────────────────────────────────── */}
-        <DriverNav
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isCharging={isCharging}
+        {/* ── Dedicated Full-Screen Vehicle Management Experience ───────── */}
+        <VehicleManager
+          isOpen={isVehicleManagerOpen}
+          onClose={() => setIsVehicleManagerOpen(false)}
+          vehicles={vehicles}
+          activeVehicleId={activeVehicleId}
+          onSelectVehicle={handleSelectVehicle}
+          onAddVehicle={handleAddVehicle}
+          onUpdateVehicle={handleUpdateVehicle}
+          onRemoveVehicle={handleRemoveVehicle}
         />
+
+        {/* ── Fixed Bottom Navigation Bar ──────────────────────────────────── */}
+        {!isStationDetailOpen && !isVehicleManagerOpen && (
+          <DriverNav
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            isCharging={isCharging}
+          />
+        )}
 
         {/* ── Global Monad Payment & Stall Hold Modal ────────────────────── */}
         <ParkingBookingModal

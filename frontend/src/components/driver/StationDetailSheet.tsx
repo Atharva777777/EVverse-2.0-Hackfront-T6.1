@@ -156,7 +156,7 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[2000] transition-opacity animate-in fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -166,7 +166,7 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label={`${details.name} station details`}
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[88vh] bg-[#FFFFFF] rounded-t-[32px] border-t border-[rgba(17,19,18,0.08)] shadow-2xl flex flex-col overflow-hidden max-w-lg mx-auto animate-in slide-in-from-bottom duration-300"
+        className="fixed inset-x-0 bottom-0 z-[2010] max-h-[88vh] bg-[#FFFFFF] rounded-t-[32px] border-t border-[rgba(17,19,18,0.08)] shadow-2xl flex flex-col overflow-hidden max-w-lg mx-auto animate-in slide-in-from-bottom duration-300"
       >
         {/* Drag / Pull handle */}
         <div className="w-full pt-3 pb-1 flex justify-center shrink-0 cursor-grab">
@@ -562,7 +562,7 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label="Report Station Issue"
-          className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-[2020] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
         >
           <div className="bg-white rounded-3xl p-5 w-full max-w-sm border border-[rgba(17,19,18,0.1)] shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between">

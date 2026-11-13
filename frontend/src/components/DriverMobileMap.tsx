@@ -237,7 +237,7 @@ export default function DriverMobileMap({
   }, [isNavigating, navigationStation, userLocation, navProgress]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full isolate overflow-hidden z-0">
       <div
         ref={mapContainerRef}
         style={{
@@ -248,7 +248,7 @@ export default function DriverMobileMap({
       />
 
       {/* Floating Map Controls */}
-      <div className="absolute right-3 bottom-24 z-30 flex flex-col gap-2">
+      <div className="absolute right-3 bottom-24 z-10 flex flex-col gap-2">
         <button
           type="button"
           onClick={() => {
