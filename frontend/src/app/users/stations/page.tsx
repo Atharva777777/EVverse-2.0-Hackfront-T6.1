@@ -10,7 +10,8 @@ import { CITY_CONFIGS } from "@/components/CountryCitySelector";
 import type { LiveStation } from "@/types/api";
 
 // Driver Mobile Components
-import { DriverNav, DriverTab } from "@/components/driver/DriverNav";
+import { DriverTab } from "@/components/driver/DriverNav";
+import { DriverDrawer } from "@/components/driver/DriverDrawer";
 import { VehicleCockpit, EVVehicle } from "@/components/driver/VehicleCockpit";
 import { JourneyPlanner } from "@/components/driver/JourneyPlanner";
 import { ChargingConsole } from "@/components/driver/ChargingConsole";
@@ -76,6 +77,7 @@ import {
   Coins,
   Wallet,
   Gauge,
+  Menu,
 } from "lucide-react";
 
 // Dynamic Leaflet Map Component
@@ -112,12 +114,17 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 export default function EVVerseDriverPage() {
-  // Navigation tabs: home, explore, journeys, charging, garage
+  // Navigation tabs: home, explore, journeys, charging, profile, garage
   const [activeTab, setActiveTab] = useState<DriverTab>("home");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Desktop Studio Frame Controls: "frame" (iPhone 16 Pro mockup), "fluid" (clean mobile column), "expanded" (wide responsive cockpit)
-  const [viewMode, setViewMode] = useState<"frame" | "fluid" | "expanded">("frame");
-  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  // Desktop Studio Frame: retain iPhone 16 Pro mockup on desktop, fluid on mobile
+  const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -128,8 +135,7 @@ export default function EVVerseDriverPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const isFramed = !isMobileScreen && viewMode === "frame";
-  const effectiveViewMode = isMobileScreen ? "fluid" : viewMode;
+  const isFramed = !isMobileScreen;
 
   // Selected city & live data
   const [selectedCity, setSelectedCity] = useState("Pune");
@@ -159,6 +165,12 @@ export default function EVVerseDriverPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("manage") === "1" || params.get("garage") === "1") {
         setIsVehicleManagerOpen(true);
+      }
+      if (params.get("menu") === "1" || params.get("drawer") === "1") {
+        setIsDrawerOpen(true);
+      }
+      if (params.get("tab") === "profile") {
+        setActiveTab("profile");
       }
     }
   }, []);
@@ -720,75 +732,21 @@ export default function EVVerseDriverPage() {
           ? "border-[rgba(255,255,255,0.08)] text-[#8C938E]"
           : "border-black/[0.08] text-[#525854]"
       }`}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
-            <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
-              EV VERSE MOBILE DRIVER APP
-            </span>
-          </div>
-          <span className={`text-[11px] px-2 py-0.5 rounded-md font-mono ${
-            isFramed
-              ? "bg-white/10 text-white/80"
-              : "bg-black/[0.06] text-[#525854] font-semibold"
-          }`}>
-            Port 3001
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
+          <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
+            EV VERSE MOBILE DRIVER APP
           </span>
         </div>
-
-        {/* View Mode Switcher */}
-        <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors ${
-          isFramed
-            ? "bg-[#1A1D1B] border-[rgba(255,255,255,0.08)]"
-            : "bg-[#EFEFEA] border-black/[0.08]"
-        }`}>
-          <button
-            onClick={() => setViewMode("frame")}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "frame"
-                ? "bg-[#C8F369] text-[#111312] shadow-xs"
-                : isFramed
-                ? "text-[#8C938E] hover:text-white"
-                : "text-[#767D78] hover:text-[#111312]"
-            }`}
-          >
-            Phone Frame
-          </button>
-          <button
-            onClick={() => setViewMode("fluid")}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "fluid"
-                ? "bg-white text-[#111312] shadow-xs"
-                : isFramed
-                ? "text-[#8C938E] hover:text-white"
-                : "text-[#767D78] hover:text-[#111312]"
-            }`}
-          >
-            Mobile Column
-          </button>
-          <button
-            onClick={() => setViewMode("expanded")}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "expanded"
-                ? "bg-white text-[#111312] shadow-xs"
-                : isFramed
-                ? "text-[#8C938E] hover:text-white"
-                : "text-[#767D78] hover:text-[#111312]"
-            }`}
-          >
-            Expanded View
-          </button>
+        <div className="text-[11px] font-mono text-[#8C938E]">
+          iPhone 16 Pro Preview
         </div>
       </div>
 
       {/* ── Outer Mobile Container Shell ── */}
       <div
         className={`w-full flex-1 flex items-center justify-center ${
-          isFramed
-            ? "py-6 px-4"
-            : effectiveViewMode === "expanded"
-            ? "py-4 px-4 max-w-5xl"
-            : "py-0 px-0 max-w-[430px]"
+          isFramed ? "py-6 px-4" : "py-0 px-0 max-w-[430px]"
         }`}
       >
         {/* Hardware Frame or Standard Container */}
@@ -796,8 +754,6 @@ export default function EVVerseDriverPage() {
           className={
             isFramed
               ? "relative w-[424px] max-w-full h-[866px] rounded-[56px] p-[10px] flex flex-col select-none"
-              : effectiveViewMode === "expanded"
-              ? "w-full max-w-5xl min-h-screen flex flex-col relative bg-[#FAF9F6] shadow-xl rounded-3xl border border-[rgba(17,19,18,0.08)] overflow-hidden"
               : "w-full max-w-[430px] min-h-screen flex flex-col relative bg-[#FAF9F6] shadow-2xl border-x border-[rgba(17,19,18,0.06)]"
           }
           style={
@@ -884,15 +840,15 @@ export default function EVVerseDriverPage() {
             >
               {/* iOS Dynamic Island & Status Bar (in frame mode) */}
               {isFramed && (
-                <div className="h-10 w-full flex items-center justify-between px-6 shrink-0 z-40 bg-[#FAF9F6] border-b border-black/[0.04] select-none">
-                  {/* iOS Time */}
-                  <span className="text-[13px] font-semibold text-[#111312] font-mono tracking-tight">
+                <div className="h-10 w-full relative flex items-center justify-between px-6 shrink-0 z-40 bg-[#FAF9F6] border-b border-black/[0.04] select-none">
+                  {/* iOS Time (Left) */}
+                  <span className="text-[13px] font-semibold text-[#111312] font-mono tracking-tight z-10">
                     9:41
                   </span>
 
-                  {/* Hyperrealistic Dynamic Island with Live Activity Expansion */}
+                  {/* Hyperrealistic Dynamic Island - EXACT HORIZONTAL CENTER */}
                   <div
-                    className={`transition-all duration-300 h-7 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md ${
+                    className={`absolute left-1/2 -translate-x-1/2 top-1.5 transition-all duration-300 h-7 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md z-20 ${
                       isCharging
                         ? "w-48 bg-black text-[#C8F369]"
                         : isNavigating
@@ -931,7 +887,7 @@ export default function EVVerseDriverPage() {
                   </div>
 
                   {/* iOS Status Indicators (Cellular Bars, 5G, Wi-Fi, Battery) */}
-                  <div className="flex items-center gap-1.5 text-[#111312]">
+                  <div className="flex items-center gap-1.5 text-[#111312] z-10">
                     {/* Cellular 4-Bars SVG */}
                     <svg className="w-3.5 h-2.5 fill-current" viewBox="0 0 17 12">
                       <rect x="0" y="9" width="2.5" height="3" rx="0.5" />
@@ -962,7 +918,7 @@ export default function EVVerseDriverPage() {
 
               {/* ── Top Driver Status Header ─────────────────────────────────────── */}
               <header
-                className="shrink-0 z-30 px-3 sm:px-4 py-2.5 border-b flex items-center justify-between"
+                className="shrink-0 z-30 px-4 py-3 border-b flex items-center justify-between"
                 style={{
                   background: "rgba(250, 249, 246, 0.96)",
                   backdropFilter: "blur(20px)",
@@ -971,64 +927,30 @@ export default function EVVerseDriverPage() {
                 }}
                 aria-label="Driver App Header"
               >
-                {/* Brand Logo & EVverse Title (Clean, Balanced & Uncrowded) */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {activeTab !== "home" && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("home")}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] p-2 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312] cursor-pointer"
-                      title="Return to Home Cockpit"
-                      aria-label="Back to Home"
-                    >
-                      <ArrowLeft size={14} />
-                    </button>
-                  )}
-                  <div className="relative w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center">
+                {/* Brand Logo (Slightly larger, clean, no text, no 2.0 badge) */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
                     <Image
                       src="/images/evverse-logo.png"
                       alt="EVverse Logo"
-                      width={36}
-                      height={36}
+                      width={40}
+                      height={40}
                       priority
                       className="object-contain w-full h-full"
                     />
                   </div>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-base sm:text-lg font-bold tracking-tight text-[#111312] leading-none">
-                      EVverse
-                    </span>
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-[#111312] text-[#C8F369] leading-none">
-                      2.0
-                    </span>
-                  </div>
                 </div>
 
-                {/* Header Right Controls: City Selector & Live Grid Indicator */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* City Selector */}
-                  <select
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    aria-label="Select City"
-                    className="text-xs font-semibold bg-white border border-[rgba(17,19,18,0.08)] text-[#111312] rounded-xl px-2.5 py-1.5 focus:outline-hidden cursor-pointer shadow-2xs hover:bg-[#F5F4EF] transition-colors min-h-[34px]"
-                  >
-                    {Object.keys(CITY_CONFIGS).map((cityName) => (
-                      <option key={cityName} value={cityName}>
-                        {cityName}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Grid Data Status Indicator */}
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                      isLive ? "bg-[#16A34A]" : "bg-[#D97706]"
-                    }`}
-                    title={isLive ? "Grid Data: Live Open Charge Map Feed" : "Grid Data: Offline Verified Regional Baseline"}
-                    aria-label={isLive ? "Connected to live grid feed" : "Offline regional baseline dataset"}
-                  />
-                </div>
+                {/* Right: Hamburger Menu Icon */}
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="w-9 h-9 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] hover:bg-[#F2EFE9] active:scale-95 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+                  aria-label="Open navigation menu"
+                  title="Open navigation menu"
+                >
+                  <Menu size={18} />
+                </button>
               </header>
 
 {/* Active Spot Booking Banner */}
@@ -1072,7 +994,6 @@ export default function EVVerseDriverPage() {
               {/* ═════════ TAB 1: HOME (Cockpit) ═════════ */}
               {activeTab === "home" && (
                 <div className="p-4 flex-1">
-                  <OfflineNotice source={source} />
                   <VehicleCockpit
                     vehicle={activeVehicle}
                     currentBatteryPct={currentBatteryPct}
@@ -1093,6 +1014,8 @@ export default function EVVerseDriverPage() {
                     }}
                     onOpenGarage={() => setIsVehicleManagerOpen(true)}
                     onOpenJourneyPlanner={() => setActiveTab("journeys")}
+                    selectedCity={selectedCity}
+                    onCityChange={setSelectedCity}
                   />
                 </div>
               )}
@@ -1411,7 +1334,129 @@ export default function EVVerseDriverPage() {
             </div>
           )}
 
-          {/* ═════════ TAB 5: GARAGE (Redirected to Dedicated Manager) ═════════ */}
+          {/* ═════════ TAB 5: PROFILE (Account & Preferences) ═════════ */}
+          {activeTab === "profile" && (
+            <div className="p-4 flex-1 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
+                <div>
+                  <h2 className="text-base font-bold text-[#111312]">Driver Profile</h2>
+                  <p className="text-[11px] text-[#525854]">Account settings &amp; fleet preferences</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs">
+                  EV
+                </div>
+              </div>
+
+              {/* Active Vehicle Card */}
+              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold">
+                    Active Vehicle
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsVehicleManagerOpen(true)}
+                    className="text-xs font-semibold text-[#111312] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Manage Fleet ({vehicles.length})</span>
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="relative w-16 h-12 rounded-xl bg-[#FAF9F6] p-1 shrink-0 flex items-center justify-center border border-black/[0.05]">
+                    <Image
+                      src={activeVehicle.image}
+                      alt={activeVehicle.model}
+                      fill
+                      className="object-contain p-0.5"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-[#111312] truncate">
+                      {activeVehicle.make} {activeVehicle.model}
+                    </h3>
+                    <div className="text-[11px] font-mono text-[#525854] mt-0.5">
+                      {activeVehicle.year} • {activeVehicle.plugType} • {activeVehicle.currentBatteryPct}% SoC
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferences: City & Auto-compatibility */}
+              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3.5">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
+                  Regional &amp; Filtering Preferences
+                </span>
+
+                <div className="flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-semibold text-[#111312]">Home Region</div>
+                    <div className="text-[10.5px] text-[#525854]">Default charging grid region</div>
+                  </div>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="bg-[#FAF9F6] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-2.5 py-1.5 cursor-pointer"
+                  >
+                    {Object.keys(CITY_CONFIGS).map((city) => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-2 border-t border-black/[0.05] flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-semibold text-[#111312]">Auto-Filter Plug Standards</div>
+                    <div className="text-[10.5px] text-[#525854]">Only show {activeVehicle.plugType} compatible plugs</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !autoCompatibility;
+                      setAutoCompatibility(next);
+                      setOnlyCompatible(next);
+                      saveStoredAutoCompatibility(next);
+                      syncAutoCompatibility(next);
+                    }}
+                    className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      autoCompatibility ? "bg-[#111312]" : "bg-[#D1D5DB]"
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                        autoCompatibility ? "right-1" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Web3 / Monad Wallet */}
+              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-2.5">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
+                  Web3 Fast-Pass Wallet
+                </span>
+                <div className="flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-semibold text-[#111312]">Monad Testnet</div>
+                    <div className="text-[10.5px] font-mono text-[#525854]">
+                      {driverWalletAddress ? truncateAddress(driverWalletAddress) : "No wallet connected"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDriverConnectWallet}
+                    disabled={isDriverConnectingWallet}
+                    className="px-3 py-1.5 bg-[#FAF9F6] hover:bg-[#EAE8E2] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    {driverWalletAddress ? "Connected" : isDriverConnectingWallet ? "Connecting..." : "Connect"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═════════ TAB 6: GARAGE (Redirected to Dedicated Manager) ═════════ */}
           {activeTab === "garage" && (
             <div className="p-4 flex-1">
               <VehicleManager
@@ -1440,14 +1485,21 @@ export default function EVVerseDriverPage() {
           onRemoveVehicle={handleRemoveVehicle}
         />
 
-        {/* ── Fixed Bottom Navigation Bar ──────────────────────────────────── */}
-        {!isStationDetailOpen && !isVehicleManagerOpen && (
-          <DriverNav
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            isCharging={isCharging}
-          />
-        )}
+        {/* ── Left-side Navigation Drawer (Replaces Bottom Bar) ─────────── */}
+        <DriverDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            if (tab === "garage") {
+              setIsVehicleManagerOpen(true);
+            } else {
+              setActiveTab(tab);
+            }
+          }}
+          activeVehicle={activeVehicle}
+          onOpenGarage={() => setIsVehicleManagerOpen(true)}
+        />
 
         {/* ── Global Monad Payment & Stall Hold Modal ────────────────────── */}
         <ParkingBookingModal

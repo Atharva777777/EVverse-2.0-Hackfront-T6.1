@@ -100,7 +100,7 @@ export function GarageFleet({
     setFormMaxAcSpeedKw(v.maxAcSpeedKw);
     setFormPlugType(v.plugType as ConnectorStandard);
     setFormWltpRangeKm(v.wltpRangeKm);
-    setFormVin(v.vin);
+    setFormVin(v.vin || "");
     setFormValidationErrors({});
   };
 

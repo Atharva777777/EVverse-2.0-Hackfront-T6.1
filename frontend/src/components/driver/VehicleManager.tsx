@@ -159,7 +159,7 @@ export function VehicleManager({
     setIsCustomMode(false);
     setConfigBatteryPct(v.currentBatteryPct);
     setConfigNickname(v.model);
-    setConfigVin(v.vin);
+    setConfigVin(v.vin || "");
     setValidationErrors({});
     setStep(2);
   };

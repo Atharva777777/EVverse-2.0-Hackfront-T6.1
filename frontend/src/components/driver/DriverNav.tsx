@@ -8,7 +8,9 @@ import {
   Zap,
 } from "lucide-react";
 
-export type DriverTab = "home" | "explore" | "journeys" | "charging" | "garage";
+export type DriverTab = "home" | "explore" | "journeys" | "charging" | "profile" | "garage";
+
+export { DriverDrawer } from "./DriverDrawer";
 
 interface DriverNavProps {
   activeTab: DriverTab;
