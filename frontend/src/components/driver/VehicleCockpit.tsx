@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Car,
@@ -72,26 +72,36 @@ export function VehicleCockpit({
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState<boolean>(false);
 
-  // Popular quick location chips
-  const quickCities = ["Pune", "Mumbai", "Navi Mumbai", "Pimpri-Chinchwad", "Thane"];
+  // Auto-scroll to section anchor if requested in URL
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#vehicle-readiness") {
+      setTimeout(() => {
+        document.getElementById("vehicle-readiness")?.scrollIntoView();
+      }, 300);
+    }
+  }, []);
+
+  // Popular quick location chips - ensure active city is always visible among the chips
   const allCityNames = Object.keys(CITY_CONFIGS);
+  const displayCities = useMemo(() => {
+    const defaultQuick = ["Pune", "Mumbai", "Navi Mumbai", "Pimpri-Chinchwad", "Thane"];
+    if (selectedCity && !defaultQuick.some((c) => c.toLowerCase() === selectedCity.toLowerCase())) {
+      return [selectedCity, ...defaultQuick];
+    }
+    return defaultQuick;
+  }, [selectedCity]);
 
   return (
     <div className="space-y-4 pb-12 select-none">
-      {/* ══════════════════════════════════════════════════════════════════
-          STEP 1: LOCATION SELECTION ("Where do you live?")
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────────────────────────────────────────────────────
+          LOCATION SELECTION ("Where do you live?")
+         ────────────────────────────────────────────────────────────────── */}
       <section
         aria-label="Location Selection"
         className="bg-white rounded-2xl p-4 border border-black/[0.06] shadow-2xs space-y-2.5"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#767D78] bg-[#F5F4EF] px-1.5 py-0.5 rounded">
-              Step 01
-            </span>
-            <h2 className="text-sm font-bold text-[#111312]">Where do you live?</h2>
-          </div>
+          <h2 className="text-sm font-bold text-[#111312]">Where do you live?</h2>
 
           {/* Active city indicator */}
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#111312]">
@@ -100,16 +110,16 @@ export function VehicleCockpit({
           </div>
         </div>
 
-        {/* Quick Location Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {quickCities.map((city) => {
+        {/* Quick Location Pills - Smooth Horizontal Scroll, No Awkward Scrollbars */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5 scroll-smooth touch-pan-x">
+          {displayCities.map((city) => {
             const isSelected = selectedCity.toLowerCase() === city.toLowerCase();
             return (
               <button
                 key={city}
                 type="button"
                 onClick={() => onCityChange?.(city)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                   isSelected
                     ? "bg-[#111312] text-white shadow-2xs font-semibold"
                     : "bg-[#F7F6F2] hover:bg-[#EFECE5] text-[#525854] border border-black/[0.04]"
@@ -124,7 +134,9 @@ export function VehicleCockpit({
           <button
             type="button"
             onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-[#F7F6F2] hover:bg-[#EFECE5] text-[#525854] border border-black/[0.04] whitespace-nowrap flex items-center gap-1 cursor-pointer"
+            className="shrink-0 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-[#F7F6F2] hover:bg-[#EFECE5] text-[#525854] border border-black/[0.04] whitespace-nowrap flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+            aria-expanded={isCityDropdownOpen}
+            aria-label="More regions"
           >
             <span>More</span>
             <ChevronDown
@@ -140,7 +152,7 @@ export function VehicleCockpit({
         {isCityDropdownOpen && (
           <div className="pt-2 border-t border-black/[0.05] animate-in fade-in-50 duration-150">
             <div className="text-[10px] font-mono text-[#767D78] uppercase mb-1.5">
-              All Regional Charging Regions ({allCityNames.length})
+              All Regional Charging Grids ({allCityNames.length})
             </div>
             <select
               value={selectedCity}
@@ -160,28 +172,23 @@ export function VehicleCockpit({
         )}
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STEP 2: VEHICLE COCKPIT HERO ("Select your vehicle")
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────────────────────────────────────────────────────
+          YOUR VEHICLE HERO SECTION
+         ────────────────────────────────────────────────────────────────── */}
       <section
-        aria-label="Active Vehicle Cockpit"
+        aria-label="Your Vehicle Cockpit"
         className="bg-white rounded-2xl p-4 sm:p-5 border border-black/[0.06] shadow-2xs relative"
       >
-        {/* Step Indicator & Vehicle Identity Header */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Vehicle Identity Header */}
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#767D78] bg-[#F5F4EF] px-1.5 py-0.5 rounded">
-                Step 02
-              </span>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#767D78] font-semibold">
-                Active Vehicle
-              </span>
-            </div>
-            <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#111312] leading-snug line-clamp-2 break-words">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-[#767D78] font-bold">
+              Your Vehicle
+            </h2>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#111312] leading-tight mt-1 line-clamp-2 break-words">
               {vehicle.make} {vehicle.model}
             </h1>
-            <div className="text-[11px] font-mono text-[#525854] mt-0.5">
+            <div className="text-xs font-mono text-[#525854] mt-0.5">
               {vehicle.year} • {vehicle.plugType}
             </div>
           </div>
@@ -199,55 +206,61 @@ export function VehicleCockpit({
           </button>
         </div>
 
-        {/* Central Vehicle Image Presentation */}
-        <div className="relative w-full h-36 sm:h-40 my-3 flex flex-col items-center justify-center">
-          <div className="relative w-full h-32 sm:h-36">
+        {/* Central Vehicle Showcase Stage */}
+        <div className="relative w-full h-44 sm:h-48 my-3 rounded-2xl overflow-hidden border border-black/[0.06] bg-gradient-to-b from-[#F7F6F2] via-[#EFECE5] to-[#E2DED5] shadow-2xs flex items-center justify-center">
+          {vehicle.image.toLowerCase().endsWith(".png") ? (
+            <div className="relative w-[92%] h-[80%] flex items-center justify-center">
+              <div className="absolute bottom-1 w-3/4 h-3 bg-black/15 blur-sm rounded-full pointer-events-none" />
+              <Image
+                src={vehicle.image}
+                alt={`${vehicle.make} ${vehicle.model}`}
+                fill
+                className="object-contain select-none transition-transform duration-300 hover:scale-[1.02]"
+                priority
+              />
+            </div>
+          ) : (
             <Image
               src={vehicle.image}
               alt={`${vehicle.make} ${vehicle.model}`}
               fill
-              className="object-contain select-none transition-transform duration-300 hover:scale-[1.01]"
+              className="object-cover select-none transition-transform duration-300 hover:scale-[1.02]"
               priority
             />
-          </div>
-          {/* Natural Ground Shadow */}
-          <div className="w-3/5 h-2 rounded-full opacity-35 bg-black/30 blur-[2px] -mt-1 pointer-events-none" />
+          )}
         </div>
 
-        {/* Subtitle Telemetry Notice */}
-        <div className="text-[9.5px] font-mono text-[#767D78] text-center pt-1 border-t border-black/[0.04]">
-          Simulated vehicle profile • Calibrated from OEM homologation physics
+        {/* Subtitle Calibration Notice */}
+        <div className="text-[10px] font-mono text-[#767D78] text-center pt-1">
+          Simulated vehicle profile • Calibrated from OEM homologation specs
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STEP 3: VEHICLE READINESS & INSTRUMENT TELEMETRY
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────────────────────────────────────────────────────
+          VEHICLE READINESS & INSTRUMENT CLUSTER
+         ────────────────────────────────────────────────────────────────── */}
       <section
-        aria-label="Vehicle Readiness and Telemetry"
+        id="vehicle-readiness"
+        aria-label="Vehicle Readiness"
         className="bg-white rounded-2xl p-4 sm:p-5 border border-black/[0.06] shadow-2xs space-y-4"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#767D78] bg-[#F5F4EF] px-1.5 py-0.5 rounded">
-              Step 03
-            </span>
-            <h2 className="text-sm font-bold text-[#111312]">Vehicle Readiness</h2>
+          <h2 className="text-sm font-bold text-[#111312]">Vehicle Readiness</h2>
+          <div className="flex items-center gap-1.5 text-[11px] font-mono font-semibold text-[#16A34A]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+            <span>Ready to Drive</span>
           </div>
-          <span className="text-[10px] font-mono text-[#16A34A] font-semibold">
-            Ready to Drive
-          </span>
         </div>
 
         {/* Primary Instrument Cluster: Estimated Range & Battery SoC */}
-        <div className="grid grid-cols-2 gap-4 items-center p-3.5 rounded-xl bg-[#FAF9F6] border border-black/[0.05]">
+        <div className="grid grid-cols-2 gap-4 items-center pt-1">
           {/* Estimated Driving Range */}
-          <div>
+          <div className="pr-2">
             <div className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-semibold">
               Estimated Range
             </div>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-3xl font-extrabold tracking-tight text-[#111312] font-mono">
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#111312] font-mono">
                 {calibratedRangeKm}
               </span>
               <span className="text-xs font-semibold text-[#525854]">km</span>
@@ -258,19 +271,19 @@ export function VehicleCockpit({
           </div>
 
           {/* Battery State of Charge (SoC) */}
-          <div className="text-right">
+          <div className="text-right pl-2 border-l border-black/[0.06]">
             <div className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-semibold">
               Battery SoC
             </div>
             <div className="flex items-baseline justify-end gap-1 mt-0.5">
-              <span className="text-3xl font-extrabold tracking-tight text-[#111312] font-mono">
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#111312] font-mono">
                 {currentBatteryPct}
               </span>
               <span className="text-xs font-semibold text-[#525854]">%</span>
             </div>
 
             {/* Automotive Battery Progress Track */}
-            <div className="w-full bg-[#E5E3DD] h-2 rounded-full mt-1.5 overflow-hidden">
+            <div className="w-full bg-[#EAE8E2] h-2 rounded-full mt-2 overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 rounded-full ${
                   currentBatteryPct > 20 ? "bg-[#111312]" : "bg-[#DC2626]"
@@ -281,8 +294,11 @@ export function VehicleCockpit({
           </div>
         </div>
 
-        {/* Drive Dynamics Mode Selector (Clean Automotive Segment) */}
-        <div className="space-y-1.5 pt-1">
+        {/* Subtle Divider */}
+        <div className="border-t border-black/[0.05]" />
+
+        {/* Drive Dynamics Mode Selector */}
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-[#111312]">Drive Dynamics</span>
             <span className="text-[10px] font-mono text-[#767D78]">
@@ -332,8 +348,11 @@ export function VehicleCockpit({
           </div>
         </div>
 
+        {/* Subtle Divider */}
+        <div className="border-t border-black/[0.05]" />
+
         {/* Secondary Vehicle Readiness Strip: Preconditioning & Core Specs */}
-        <div className="pt-2 border-t border-black/[0.05] grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
           {/* Battery Preconditioning Action */}
           <button
             type="button"
@@ -397,21 +416,21 @@ export function VehicleCockpit({
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STEP 4: JOURNEY ENTRY POINT ("Plan your journey")
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────────────────────────────────────────────────────
+          JOURNEY ENTRY POINT ("Will I Make It?")
+         ────────────────────────────────────────────────────────────────── */}
       <section
-        aria-label="Journey Planning Call to Action"
+        aria-label="Journey Planning Simulation"
         className="bg-[#111312] text-white rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 relative overflow-hidden"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#111312] bg-[#C8F369] px-1.5 py-0.5 rounded">
-              Step 04
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111312] bg-[#C8F369] px-2 py-0.5 rounded-full">
+              Simulator
             </span>
-            <span className="text-xs font-bold text-white/90">Next Step</span>
+            <span className="text-xs font-bold text-white/90">Corridor Dispatch</span>
           </div>
-          <span className="text-[10px] font-mono text-white/60">Corridor Physics</span>
+          <span className="text-[10px] font-mono text-white/60">Elevation &amp; Range Physics</span>
         </div>
 
         <div className="flex items-start gap-3">
@@ -472,11 +491,11 @@ export function VehicleCockpit({
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          CHASSIS SPECIFICATIONS & BASELINE TELEMETRY (Section 7)
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* ──────────────────────────────────────────────────────────────────
+          CHASSIS SPECIFICATIONS & OEM HOMOLOGATION
+         ────────────────────────────────────────────────────────────────── */}
       <section
-        aria-label="Chassis Specifications and Telemetry"
+        aria-label="Chassis Specifications and Homologation"
         className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden shadow-2xs"
       >
         <button
@@ -490,7 +509,7 @@ export function VehicleCockpit({
               Chassis Specs
             </span>
             <span className="text-xs font-bold text-[#111312]">
-              Homologation &amp; Telemetry
+              OEM Specifications &amp; Homologation
             </span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-[#525854]">
@@ -506,7 +525,6 @@ export function VehicleCockpit({
 
         {showDiagnostics && (
           <div className="px-4 pb-4 pt-1 space-y-3 border-t border-black/[0.05] animate-in fade-in-50 duration-150">
-            {/* Streamlined Aligned Specification Rows (No nested cards/boxes) */}
             <div className="divide-y divide-black/[0.05] text-xs font-mono">
               <div className="py-2 flex items-center justify-between">
                 <span className="text-[#525854]">Battery Capacity (Usable / Gross):</span>
@@ -520,7 +538,9 @@ export function VehicleCockpit({
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-[#525854]">State of Health (SOH):</span>
-                <span className="font-bold text-[#16A34A]">{vehicle.sohPct || 99}% Optimal</span>
+                <span className="font-bold text-[#16A34A]">
+                  {vehicle.sohPct || 99}% (Simulated Model)
+                </span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-[#525854]">Connector Standard:</span>
@@ -534,11 +554,11 @@ export function VehicleCockpit({
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-[#525854]">Tire Pressures (Front / Rear):</span>
-                <span className="font-bold text-[#111312]">2.4 / 2.6 bar</span>
+                <span className="font-bold text-[#111312]">2.4 / 2.6 bar (Recommended)</span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-[#525854]">Battery Pack Thermals:</span>
-                <span className="font-bold text-[#16A34A]">24°C (Nominal)</span>
+                <span className="font-bold text-[#16A34A]">24°C Nominal (Simulated Baseline)</span>
               </div>
             </div>
           </div>

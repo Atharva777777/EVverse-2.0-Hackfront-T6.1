@@ -264,9 +264,9 @@ export function DriverDrawer({
         {/* Drawer Bottom Footer */}
         <div className="p-4 border-t border-black/[0.06] bg-[#FAF9F6]">
           <div className="flex items-center justify-between text-[11px] text-[#767D78] font-mono">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               <Shield size={11} className="text-[#16A34A]" />
-              Verified Automotive Telemetry
+              Calibrated Vehicle Simulation
             </span>
             <span>v2.0</span>
           </div>

@@ -81,6 +81,15 @@ html {
   min-width: 44px;
 }
 
+/* Hide scrollbars cleanly for mobile carousels and smooth horizontal overflow */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Accessible reduced-motion support */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
