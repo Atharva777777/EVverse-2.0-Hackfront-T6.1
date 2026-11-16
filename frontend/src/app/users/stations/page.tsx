@@ -190,6 +190,7 @@ export default function EVVerseDriverPage() {
     isLive,
     stationCount,
     source,
+    sources,
     lastUpdatedTime,
     fallbackReason,
     refetch,
@@ -1600,6 +1601,7 @@ export default function EVVerseDriverPage() {
           lastUpdatedTime={lastUpdatedTime}
           loading={loading}
           fallbackReason={fallbackReason}
+          sources={sources}
           onRefresh={refetch}
         />
           </div>

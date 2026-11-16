@@ -180,18 +180,35 @@ export interface LiveStation {
   bays: number;
   connector_types: string[];
   usage_cost?: string | null;
-  source: "open_charge_map" | "kaggle_baseline";
+  source: string;
+  sources?: string[];
+  source_ids?: Record<string, string>;
+  attribution?: string | null;
   last_status_update?: string | null;
+}
+
+export interface SourceStatus {
+  name: string;
+  source_key: string;
+  status: "connected" | "loaded" | "active_fallback" | "standby" | "offline" | "error" | string;
+  is_available: boolean;
+  station_count: number;
+  last_updated?: string | null;
+  attribution?: string | null;
+  error_message?: string | null;
 }
 
 export interface LiveDataResponse {
   city: string;
   is_live: boolean;
-  source: "open_charge_map" | "kaggle_baseline";
+  source: string;
   status_message: string;
   live_station_count: number;
+  raw_station_count?: number;
+  deduplicated_count?: number;
   last_updated: string;
   stations: LiveStation[];
+  sources?: Record<string, SourceStatus>;
   fallback_reason?: string | null;
 }
 

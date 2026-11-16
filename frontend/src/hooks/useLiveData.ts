@@ -73,6 +73,7 @@ export function useLiveData(city: string) {
   const lastUpdatedTime = formatTime(data?.last_updated);
   const source = data?.source ?? "kaggle_baseline";
   const fallbackReason = data?.fallback_reason;
+  const sources = data?.sources ?? {};
 
   return {
     data,
@@ -82,6 +83,7 @@ export function useLiveData(city: string) {
     stationCount,
     lastUpdatedTime,
     source,
+    sources,
     fallbackReason,
     refetch: () => loadData(city),
   };

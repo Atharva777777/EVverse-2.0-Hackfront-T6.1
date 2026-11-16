@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { X, RefreshCw, Radio } from "lucide-react";
+import type { SourceStatus } from "@/types/api";
 
 interface LiveDataSourceSheetProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface LiveDataSourceSheetProps {
   lastUpdatedTime?: string | null;
   loading: boolean;
   fallbackReason?: string | null;
+  sources?: Record<string, SourceStatus>;
   onRefresh: () => void;
 }
 
@@ -25,6 +27,7 @@ export function LiveDataSourceSheet({
   stationCount,
   lastUpdatedTime,
   loading,
+  sources,
   onRefresh,
 }: LiveDataSourceSheetProps) {
   // Close on Escape key
@@ -52,8 +55,30 @@ export function LiveDataSourceSheet({
 
   if (!isOpen) return null;
 
-  const isKaggleActive = source === "kaggle_baseline";
-  const hasActualTimestamp = isLive && lastUpdatedTime && lastUpdatedTime !== "Just now";
+  // Format timestamp helper
+  const formatIso = (isoStr?: string | null): string | null => {
+    if (!isoStr) return null;
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    } catch {
+      return null;
+    }
+  };
+
+  // Source-specific telemetry
+  const ocm = sources?.open_charge_map;
+  const bee = sources?.bee;
+  const osm = sources?.osm;
+  const kaggle = sources?.kaggle_baseline;
+
+  const isKaggleActive = kaggle ? kaggle.status === "active_fallback" : source === "kaggle_baseline";
+  const ocmConnected = ocm ? ocm.status === "connected" && ocm.station_count > 0 : isLive;
+  const beeConnected = bee ? bee.status === "connected" && bee.station_count > 0 : false;
+  const osmLoaded = osm ? osm.status === "loaded" && osm.station_count > 0 : false;
+
+  const ocmTimestamp = ocm ? formatIso(ocm.last_updated) : (isLive && lastUpdatedTime !== "Just now" ? lastUpdatedTime : null);
+  const beeTimestamp = bee ? formatIso(bee.last_updated) : null;
 
   return (
     <div
@@ -70,13 +95,16 @@ export function LiveDataSourceSheet({
         {/* Header */}
         <div className="px-4 py-3 border-b border-black/[0.06] flex items-center justify-between bg-[#FAF9F6]">
           <div className="flex items-center gap-2">
-            <Radio size={14} className="text-[#16A34A]" />
+            <Radio size={14} className={isLive ? "text-[#16A34A]" : "text-[#D97706]"} />
             <div>
               <h2 id="live-data-popover-title" className="text-xs font-bold text-[#111312] leading-tight">
                 Live Data Sources
               </h2>
               <div className="text-[10px] font-mono text-[#767D78]">
                 Grid: <span className="text-[#111312] font-semibold">{selectedCity}</span>
+                {stationCount > 0 && (
+                  <span className="text-[#16A34A] font-medium ml-1.5">• {stationCount} stations</span>
+                )}
               </div>
             </div>
           </div>
@@ -113,17 +141,19 @@ export function LiveDataSourceSheet({
               <div className="flex items-center gap-1.5 font-mono text-[11px]">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#A3A3A3]"
+                    ocmConnected ? "bg-[#16A34A] animate-pulse" : "bg-[#A3A3A3]"
                   }`}
                 />
-                <span className={isLive ? "text-[#16A34A] font-semibold" : "text-[#767D78]"}>
-                  {isLive ? `Connected (${stationCount} stations)` : "Offline"}
+                <span className={ocmConnected ? "text-[#16A34A] font-semibold" : "text-[#767D78]"}>
+                  {ocmConnected
+                    ? `Connected (${ocm ? ocm.station_count : stationCount} stations)`
+                    : "Offline"}
                 </span>
               </div>
             </div>
-            {hasActualTimestamp && (
+            {ocmTimestamp && (
               <div className="text-[10px] font-mono text-[#767D78] mt-0.5">
-                Last updated: {lastUpdatedTime}
+                Last updated: {ocmTimestamp}
               </div>
             )}
           </div>
@@ -133,10 +163,33 @@ export function LiveDataSourceSheet({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-[#111312]">BEE</span>
               <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
-                <span className="text-[#2563EB]">Verified API, not yet integrated</span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    beeConnected ? "bg-[#16A34A] animate-pulse" : bee?.status === "error" ? "bg-[#D97706]" : "bg-[#2563EB]"
+                  }`}
+                />
+                <span
+                  className={
+                    beeConnected
+                      ? "text-[#16A34A] font-semibold"
+                      : bee?.status === "error"
+                      ? "text-[#D97706]"
+                      : "text-[#2563EB]"
+                  }
+                >
+                  {beeConnected
+                    ? `Connected (${bee?.station_count ?? 0} stations)`
+                    : bee?.status === "error"
+                    ? "Unavailable"
+                    : "Verified API (Standby)"}
+                </span>
               </div>
             </div>
+            {beeTimestamp && (
+              <div className="text-[10px] font-mono text-[#767D78] mt-0.5">
+                Last updated: {beeTimestamp}
+              </div>
+            )}
           </div>
 
           {/* Row 3: OpenStreetMap */}
@@ -144,8 +197,16 @@ export function LiveDataSourceSheet({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-[#111312]">OpenStreetMap</span>
               <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]" />
-                <span className="text-[#7C3AED]">Local dataset, not yet integrated</span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    osmLoaded ? "bg-[#16A34A]" : "bg-[#7C3AED]"
+                  }`}
+                />
+                <span className={osmLoaded ? "text-[#16A34A] font-semibold" : "text-[#7C3AED]"}>
+                  {osmLoaded
+                    ? `Loaded (${osm?.station_count ?? 0} stations)`
+                    : "Local dataset (Standby)"}
+                </span>
               </div>
             </div>
           </div>

@@ -62,7 +62,7 @@ export interface EnrichedStationDetail {
   accessRestrictions: string;
   distanceKm: number;
   estimatedDriveTimeMins: number;
-  source: "open_charge_map" | "kaggle_baseline";
+  source: string;
   sourceLabel: string;
   lastUpdatedText: string;
   isLiveTelemetry: boolean;
@@ -430,6 +430,12 @@ export function enrichStation(
     sourceLabel:
       station.source === "open_charge_map"
         ? "Open Charge Map (Live Gateway)"
+        : station.source === "bee"
+        ? "BEE National Registry"
+        : station.source === "osm"
+        ? "OpenStreetMap (Community Verified)"
+        : station.source === "merged"
+        ? "Multi-Source Merged"
         : "Verified Regional Baseline (Kaggle)",
     lastUpdatedText,
     isLiveTelemetry: statusEval.isLive,

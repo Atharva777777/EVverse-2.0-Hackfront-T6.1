@@ -28,6 +28,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from backend.data.loader import get_loader
 
+try:
+    from dotenv import load_dotenv
+    _backend_env = Path(__file__).resolve().parents[1] / ".env"
+    if _backend_env.exists():
+        load_dotenv(dotenv_path=_backend_env, override=False)
+except ImportError:
+    pass
+
 log = logging.getLogger(__name__)
 
 _MODULE_DIR = Path(__file__).resolve().parent
@@ -56,6 +64,22 @@ CITY_COORDINATES: Dict[str, Tuple[float, float]] = {
     "Moscow": (55.7558, 37.6173),
 }
 
+# Standard Open Charge Map ConnectionTypeID mapping for compact POI responses
+OCM_CONNECTION_TYPE_IDS: Dict[int, str] = {
+    1: "Type 1 (J1772)",
+    2: "CHAdeMO",
+    25: "Type 2 (Socket Only)",
+    26: "Commando (CEE Blue)",
+    27: "Tesla Supercharger",
+    28: "CEE 7/4 - Schuko",
+    30: "Tesla (Roadster)",
+    32: "CCS1 (Type 1)",
+    33: "CCS2 (Type 2)",
+    1036: "Type 2 (Tethered Connector)",
+    1038: "GB-T (AC)",
+    1039: "GB-T (DC)",
+}
+
 OCM_API_BASE_URL = "https://api.openchargemap.io/v3/poi"
 DEFAULT_TIMEOUT_SECONDS = 4.0
 CACHE_TTL_SECONDS = 300.0  # 5 minutes
@@ -75,7 +99,10 @@ class NormalizedStation:
     bays: int = 1
     connector_types: List[str] = field(default_factory=list)
     usage_cost: Optional[str] = None
-    source: str = "open_charge_map"  # "open_charge_map" or "kaggle_baseline"
+    source: str = "open_charge_map"  # "open_charge_map", "bee", "osm", "kaggle_baseline", "merged"
+    sources: List[str] = field(default_factory=list)
+    source_ids: Dict[str, str] = field(default_factory=dict)
+    attribution: Optional[str] = None
     last_status_update: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -93,6 +120,9 @@ class NormalizedStation:
             "connector_types": self.connector_types,
             "usage_cost": self.usage_cost,
             "source": self.source,
+            "sources": self.sources or [self.source],
+            "source_ids": self.source_ids,
+            "attribution": self.attribution,
             "last_status_update": self.last_status_update,
         }
 
@@ -180,6 +210,14 @@ class OpenChargeMapService:
                     pass
             ct = c.get("ConnectionType") or {}
             ct_title = ct.get("Title")
+            if not ct_title:
+                ct_id = c.get("ConnectionTypeID")
+                if ct_id in OCM_CONNECTION_TYPE_IDS:
+                    ct_title = OCM_CONNECTION_TYPE_IDS[ct_id]
+            if ct_title == "CCS (Type 2)":
+                ct_title = "CCS2 (Type 2)"
+            elif ct_title == "CCS (Type 1)":
+                ct_title = "CCS1 (Type 1)"
             if ct_title and ct_title not in conn_types:
                 conn_types.append(ct_title)
 
@@ -200,6 +238,9 @@ class OpenChargeMapService:
             connector_types=conn_types,
             usage_cost=usage_cost,
             source="open_charge_map",
+            sources=["open_charge_map"],
+            source_ids={"open_charge_map": f"OCM-{poi_id}"},
+            attribution="Open Charge Map (CC-BY 4.0)",
             last_status_update=last_status or datetime.now(timezone.utc).isoformat(),
         )
 
@@ -239,6 +280,9 @@ class OpenChargeMapService:
                             connector_types=conn_list,
                             usage_cost=f"${float(row.get('cost_usd_per_kwh', 0.25)):.2f}/kWh" if pd.notna(row.get("cost_usd_per_kwh")) else None,
                             source="kaggle_baseline",
+                            sources=["kaggle_baseline"],
+                            source_ids={"kaggle_baseline": str(row.get("station_id", ""))},
+                            attribution="Kaggle Baseline Dataset (Static & Unverified)",
                             last_status_update=None,
                         )
                     )
@@ -276,6 +320,9 @@ class OpenChargeMapService:
                                 connector_types=["CCS2", "Type 2", "CHAdeMO"],
                                 usage_cost="$0.28/kWh",
                                 source="kaggle_baseline",
+                                sources=["kaggle_baseline"],
+                                source_ids={"kaggle_baseline": f"EV-{canonical_city[:3].upper()}-{row.get('label', idx)}"},
+                                attribution="Candidate Zones Static Baseline (Unverified)",
                                 last_status_update=None,
                             )
                         )
