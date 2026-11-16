@@ -231,20 +231,20 @@ class OpenChargeMapService:
                             latitude=float(row.get("latitude", 0.0)),
                             longitude=float(row.get("longitude", 0.0)),
                             address=str(row.get("address", "")),
-                            operator=str(row.get("station_operator", "Standard EV")),
-                            status="Operational (Baseline)",
+                            operator=str(row.get("station_operator", "Standard EV (Baseline)")),
+                            status="Static Baseline (Unverified)",
                             is_operational=True,
                             power_kw=float(row.get("charging_capacity_kw", 120.0)) if pd.notna(row.get("charging_capacity_kw")) else 120.0,
                             bays=int(row.get("parking_spots", 2)) if pd.notna(row.get("parking_spots")) else 2,
                             connector_types=conn_list,
                             usage_cost=f"${float(row.get('cost_usd_per_kwh', 0.25)):.2f}/kWh" if pd.notna(row.get("cost_usd_per_kwh")) else None,
                             source="kaggle_baseline",
-                            last_status_update=datetime.now(timezone.utc).isoformat(),
+                            last_status_update=None,
                         )
                     )
                 total_count = len(city_df)
                 source_val = "kaggle_baseline"
-                status_msg = "Baseline dataset (Open Charge Map API fallback)"
+                status_msg = "Static baseline dataset (Open Charge Map API fallback - unverified live data)"
                 fallback_reason = reason
             else:
                 city_key = canonical_city.lower().replace(" ", "_")
@@ -264,24 +264,24 @@ class OpenChargeMapService:
                         stations.append(
                             NormalizedStation(
                                 station_id=f"EV-{canonical_city[:3].upper()}-{row.get('label', idx)}",
-                                name=hub_name,
+                                name=f"{hub_name} (Candidate Baseline)",
                                 latitude=float(row.get("latitude", 0.0)),
                                 longitude=float(row.get("longitude", 0.0)),
                                 address=f"{hub_name}, {canonical_city}",
-                                operator="QuantEV Verified Hub",
-                                status="Operational (Baseline)",
+                                operator="Candidate Zone (Unverified Baseline)",
+                                status="Static Baseline (Unverified)",
                                 is_operational=True,
                                 power_kw=150.0,
                                 bays=4,
                                 connector_types=["CCS2", "Type 2", "CHAdeMO"],
                                 usage_cost="$0.28/kWh",
                                 source="kaggle_baseline",
-                                last_status_update=datetime.now(timezone.utc).isoformat(),
+                                last_status_update=None,
                             )
                         )
                     total_count = len(stations)
                     source_val = "kaggle_baseline"
-                    status_msg = f"Candidate zones baseline for {canonical_city} (OCM API fallback)"
+                    status_msg = f"Candidate zones static baseline for {canonical_city} (OCM fallback - unverified live data)"
                     fallback_reason = reason
                 else:
                     return LiveEnrichmentResult(

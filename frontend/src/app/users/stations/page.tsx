@@ -319,7 +319,11 @@ export default function EVVerseDriverPage() {
     }));
 
     const communityInCity: DriverStation[] = deployedStations
-      .filter((d) => d.city.toLowerCase() === selectedCity.toLowerCase())
+      .filter((d) => {
+        const c1 = d.city.toLowerCase();
+        const c2 = selectedCity.toLowerCase();
+        return c1 === c2 || (c1 === "pune" && (c2 === "pimpri-chinchwad" || c2 === "hinjawadi"));
+      })
       .map((d) => ({
         station_id: d.id,
         name: d.name,
@@ -340,6 +344,37 @@ export default function EVVerseDriverPage() {
 
     return [...communityInCity, ...baseline];
   }, [liveData, userLocation, deployedStations, selectedCity]);
+
+  // Candidate charging stations for long-distance / corridor journey planning
+  const journeyCandidateStations = useMemo<DriverStation[]>(() => {
+    const communityStations: DriverStation[] = deployedStations.map((d) => ({
+      station_id: d.id,
+      name: d.name,
+      latitude: d.lat,
+      longitude: d.lng,
+      address: d.address,
+      operator: d.operator,
+      status: "Operational (Community Hub)",
+      is_operational: d.status === "Online",
+      power_kw: d.powerKw,
+      bays: d.bays,
+      connector_types: d.connectorTypes,
+      usage_cost: `₹${d.ratePerKwh}/kWh`,
+      source: "open_charge_map" as const,
+      last_status_update: new Date().toISOString(),
+      distanceKm: haversineKm(userLocation[0], userLocation[1], d.lat, d.lng),
+    }));
+
+    const existingIds = new Set(communityStations.map((s) => s.station_id));
+    const baseline = (liveData?.stations || [])
+      .filter((s) => !existingIds.has(s.station_id))
+      .map((st) => ({
+        ...st,
+        distanceKm: haversineKm(userLocation[0], userLocation[1], st.latitude, st.longitude),
+      }));
+
+    return [...communityStations, ...baseline];
+  }, [deployedStations, liveData, userLocation]);
 
   // Filter stations based on driver inputs
   const filteredStations = useMemo(() => {
@@ -1281,7 +1316,7 @@ export default function EVVerseDriverPage() {
               <JourneyPlanner
                 activeVehicle={activeVehicle}
                 currentBatteryPct={currentBatteryPct}
-                candidateStations={liveData?.stations || []}
+                candidateStations={journeyCandidateStations}
                 userLocation={userLocation}
                 selectedCity={selectedCity}
                 onStartTripNavigation={({ name, latitude, longitude, primaryStation }) => {

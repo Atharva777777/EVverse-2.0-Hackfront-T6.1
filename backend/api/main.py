@@ -13,11 +13,13 @@ from pathlib import Path
 
 try:
     from dotenv import load_dotenv
-    _env_path = Path(__file__).resolve().parents[2] / ".env"
-    if _env_path.exists():
-        load_dotenv(dotenv_path=_env_path, override=False)
-    else:
-        load_dotenv(override=False)
+    _root_env = Path(__file__).resolve().parents[2] / ".env"
+    _backend_env = Path(__file__).resolve().parents[1] / ".env"
+    if _backend_env.exists():
+        load_dotenv(dotenv_path=_backend_env, override=False)
+    if _root_env.exists():
+        load_dotenv(dotenv_path=_root_env, override=False)
+    load_dotenv(override=False)
 except ImportError:
     pass
 

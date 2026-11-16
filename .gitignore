@@ -36,3 +36,7 @@ next-env.d.ts
 *.db
 *.sqlite
 *.sqlite3
+
+# Raw OSM extracts
+*.pbf
+*.osm

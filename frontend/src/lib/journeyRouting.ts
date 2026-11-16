@@ -63,8 +63,50 @@ export interface JourneyPlanResult {
   };
 }
 
+const PUNE_CORRIDORS: JourneyDestination[] = [
+  {
+    id: "pune-lonavala",
+    name: "Lonavala",
+    city: "Pune",
+    lat: 18.7557,
+    lng: 73.4091,
+    distanceKm: 64,
+    elevationGainM: 75,
+  },
+  {
+    id: "pune-mumbai-vashi",
+    name: "Mumbai (Vashi Gateway)",
+    city: "Pune",
+    lat: 19.0657,
+    lng: 72.9984,
+    distanceKm: 132,
+    elevationGainM: 40,
+  },
+  {
+    id: "pune-mahabaleshwar",
+    name: "Mahabaleshwar",
+    city: "Pune",
+    lat: 17.9237,
+    lng: 73.6586,
+    distanceKm: 120,
+    elevationGainM: 820,
+  },
+  {
+    id: "pune-talegaon",
+    name: "Talegaon - Hinjawadi",
+    city: "Pune",
+    lat: 18.724,
+    lng: 73.678,
+    distanceKm: 34,
+    elevationGainM: 50,
+  },
+];
+
 // ── Curated Transit Corridors per Metropolitan Region ─────────────────────────
 export const REGIONAL_CORRIDOR_DESTINATIONS: Record<string, JourneyDestination[]> = {
+  Pune: PUNE_CORRIDORS,
+  "Pimpri-Chinchwad": PUNE_CORRIDORS,
+  Hinjawadi: PUNE_CORRIDORS,
   Mumbai: [
     {
       id: "pune-exp",
