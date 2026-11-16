@@ -988,39 +988,33 @@ export default function EVVerseDriverPage() {
                   </div>
                 </div>
 
-                {/* Center / Action: Compact Live Data Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsLiveDataSheetOpen(true)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-mono font-medium border shadow-2xs transition-all active:scale-95 cursor-pointer ${
-                    isLive
-                      ? "bg-emerald-50 text-emerald-900 border-emerald-200/80 hover:bg-emerald-100/70"
-                      : "bg-amber-50 text-amber-900 border-amber-200/80 hover:bg-amber-100/70"
-                  }`}
-                  title="View charging station data sources"
-                  aria-label="View charging station data sources"
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                    }`}
-                  />
-                  <span className="font-semibold">{isLive ? "Live Grid" : "Baseline"}</span>
-                  <span className="text-[10px] text-black/50 font-sans font-normal hidden xs:inline">
-                    • {stationCount}
-                  </span>
-                </button>
+                {/* Right: Subtle Live Data Button & Hamburger Menu */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsLiveDataSheetOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-[#111312] bg-[#F5F4EF] hover:bg-[#EAE8E2] border border-black/[0.06] shadow-2xs transition-all active:scale-95 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+                    title="Live charging data sources"
+                    aria-label="Live charging data sources"
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
+                      }`}
+                    />
+                    <span>Live Data</span>
+                  </button>
 
-                {/* Right: Hamburger Menu Icon */}
-                <button
-                  type="button"
-                  onClick={() => setIsDrawerOpen(true)}
-                  className="w-9 h-9 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] hover:bg-[#F2EFE9] active:scale-95 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
-                  aria-label="Open navigation menu"
-                  title="Open navigation menu"
-                >
-                  <Menu size={18} />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDrawerOpen(true)}
+                    className="w-9 h-9 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] hover:bg-[#F2EFE9] active:scale-95 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+                    aria-label="Open navigation menu"
+                    title="Open navigation menu"
+                  >
+                    <Menu size={18} />
+                  </button>
+                </div>
               </header>
 
 {/* Active Spot Booking Banner */}
