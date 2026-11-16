@@ -24,6 +24,7 @@ import {
   OfflineNotice,
 } from "@/components/driver/StatusStates";
 import { StationDetailSheet } from "@/components/driver/StationDetailSheet";
+import { LiveDataSourceSheet } from "@/components/driver/LiveDataSourceSheet";
 import {
   ParkingBookingModal,
   type ParkingBooking,
@@ -182,7 +183,18 @@ export default function EVVerseDriverPage() {
   ]);
 
   // Live stations from backend API
-  const { data: liveData, loading, error, isLive, stationCount, source } = useLiveData(selectedCity);
+  const {
+    data: liveData,
+    loading,
+    error,
+    isLive,
+    stationCount,
+    source,
+    lastUpdatedTime,
+    fallbackReason,
+    refetch,
+  } = useLiveData(selectedCity);
+  const [isLiveDataSheetOpen, setIsLiveDataSheetOpen] = useState(false);
 
   // Explore Map State
   const [mapCenter, setMapCenter] = useState<[number, number]>([cityConfig.lat, cityConfig.lng]);
@@ -976,6 +988,29 @@ export default function EVVerseDriverPage() {
                   </div>
                 </div>
 
+                {/* Center / Action: Compact Live Data Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsLiveDataSheetOpen(true)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-mono font-medium border shadow-2xs transition-all active:scale-95 cursor-pointer ${
+                    isLive
+                      ? "bg-emerald-50 text-emerald-900 border-emerald-200/80 hover:bg-emerald-100/70"
+                      : "bg-amber-50 text-amber-900 border-amber-200/80 hover:bg-amber-100/70"
+                  }`}
+                  title="View charging station data sources"
+                  aria-label="View charging station data sources"
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                    }`}
+                  />
+                  <span className="font-semibold">{isLive ? "Live Grid" : "Baseline"}</span>
+                  <span className="text-[10px] text-black/50 font-sans font-normal hidden xs:inline">
+                    • {stationCount}
+                  </span>
+                </button>
+
                 {/* Right: Hamburger Menu Icon */}
                 <button
                   type="button"
@@ -1226,10 +1261,24 @@ export default function EVVerseDriverPage() {
                       <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C938E] font-semibold">
                         {filteredStations.length} Charging Stations
                       </span>
-                      <span className="text-[10px] text-[#16A34A] font-semibold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" aria-hidden="true" />
-                        Live
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsLiveDataSheetOpen(true)}
+                        className={`text-[10px] font-semibold font-mono flex items-center gap-1 px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                          isLive
+                            ? "text-[#16A34A] bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70"
+                            : "text-[#D97706] bg-amber-50 border-amber-200 hover:bg-amber-100/70"
+                        }`}
+                        title="Click to view data source details"
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span>{isLive ? "Live OCM" : "Static Baseline"}</span>
+                      </button>
                     </div>
 
                     {/* First Station Preview Card */}
@@ -1544,6 +1593,20 @@ export default function EVVerseDriverPage() {
           onStartNavigation={(st: any) => startNavigation(st as DriverStation)}
           activeVehicle={activeVehicle}
           initialStep="review"
+        />
+
+        {/* ── Transparent Multi-Source Live Data Panel ───────────────────── */}
+        <LiveDataSourceSheet
+          isOpen={isLiveDataSheetOpen}
+          onClose={() => setIsLiveDataSheetOpen(false)}
+          selectedCity={selectedCity}
+          isLive={isLive}
+          source={source}
+          stationCount={stationCount}
+          lastUpdatedTime={lastUpdatedTime}
+          loading={loading}
+          fallbackReason={fallbackReason}
+          onRefresh={refetch}
         />
           </div>
         </div>
