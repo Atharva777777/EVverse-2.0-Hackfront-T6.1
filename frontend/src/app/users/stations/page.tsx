@@ -705,7 +705,11 @@ export default function EVVerseDriverPage() {
         setChargeKwhDelivered((prev) => {
           const increment = +(chargeCurrentKw / 3600).toFixed(4);
           const nextKwh = +(prev + increment).toFixed(3);
-          setChargeCost(+(nextKwh * 0.28).toFixed(2));
+          const parsedRate = chargeStation?.usage_cost
+            ? parseFloat(chargeStation.usage_cost.replace(/[^0-9.]/g, ""))
+            : null;
+          const rate = parsedRate && !isNaN(parsedRate) && parsedRate > 0 ? parsedRate : 0;
+          setChargeCost(+(nextKwh * rate).toFixed(2));
           return nextKwh;
         });
 

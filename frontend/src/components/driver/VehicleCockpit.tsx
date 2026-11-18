@@ -4,13 +4,10 @@ import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Car,
-  ChevronRight,
   ChevronDown,
   Navigation,
   Zap,
-  Gauge,
   MapPin,
-  Check,
 } from "lucide-react";
 import { CITY_CONFIGS } from "@/components/CountryCitySelector";
 
@@ -64,7 +61,6 @@ export function VehicleCockpit({
   nearestUltraStation,
   onNavigateToNearest,
   onOpenGarage,
-  onOpenJourneyPlanner,
   selectedCity = "Pune",
   onCityChange,
 }: VehicleCockpitProps) {
@@ -76,7 +72,7 @@ export function VehicleCockpit({
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash === "#vehicle-readiness") {
       setTimeout(() => {
-        document.getElementById("vehicle-readiness")?.scrollIntoView();
+        document.getElementById("vehicle-readiness")?.scrollIntoView({ behavior: "smooth" });
       }, 300);
     }
   }, []);
@@ -92,75 +88,76 @@ export function VehicleCockpit({
   }, [selectedCity]);
 
   return (
-    <div className="space-y-4 pb-12 select-none">
+    <div className="space-y-3.5 pb-10 select-none max-w-lg mx-auto w-full">
       {/* ──────────────────────────────────────────────────────────────────
-          LOCATION SELECTION ("Where do you live?")
+          COMPACT REGIONAL HEADER BAR
          ────────────────────────────────────────────────────────────────── */}
-      <section
-        aria-label="Location Selection"
-        className="bg-white rounded-2xl p-4 border border-black/[0.06] shadow-2xs space-y-2.5"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#111312]">Where do you live?</h2>
-
-          {/* Active city indicator */}
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#111312]">
-            <MapPin size={13} className="text-[#16A34A]" />
-            <span>{selectedCity}</span>
+      <div className="bg-white rounded-2xl p-2.5 px-3 border border-black/[0.06] shadow-2xs space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-[#111312]">
+            <MapPin size={13} className="text-[#16A34A]" aria-hidden="true" />
+            <span className="text-[11px] font-mono uppercase tracking-wider text-[#767D78]">
+              Grid Region:
+            </span>
+            <span className="text-xs font-bold text-[#111312]">{selectedCity}</span>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+            className="min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#525854] hover:text-[#111312] border border-black/[0.06] flex items-center gap-1 transition-all cursor-pointer"
+            aria-expanded={isCityDropdownOpen}
+            aria-label="Change charging grid region"
+          >
+            <span>Change</span>
+            <ChevronDown
+              size={12}
+              className={`transition-transform duration-200 ${
+                isCityDropdownOpen ? "rotate-180" : ""
+              }`}
+              aria-hidden="true"
+            />
+          </button>
         </div>
 
-        {/* Quick Location Pills - Smooth Horizontal Scroll, No Awkward Scrollbars */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5 scroll-smooth touch-pan-x">
+        {/* Quick City Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 touch-pan-x">
           {displayCities.map((city) => {
             const isSelected = selectedCity.toLowerCase() === city.toLowerCase();
             return (
               <button
                 key={city}
                 type="button"
-                onClick={() => onCityChange?.(city)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
+                onClick={() => {
+                  onCityChange?.(city);
+                  setIsCityDropdownOpen(false);
+                }}
+                className={`min-h-[30px] shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                   isSelected
                     ? "bg-[#111312] text-white shadow-2xs font-semibold"
-                    : "bg-[#F7F6F2] hover:bg-[#EFECE5] text-[#525854] border border-black/[0.04]"
+                    : "bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#525854] border border-black/[0.04]"
                 }`}
               >
                 {city}
               </button>
             );
           })}
-
-          {/* More Cities Dropdown Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-            className="shrink-0 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-[#F7F6F2] hover:bg-[#EFECE5] text-[#525854] border border-black/[0.04] whitespace-nowrap flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
-            aria-expanded={isCityDropdownOpen}
-            aria-label="More regions"
-          >
-            <span>More</span>
-            <ChevronDown
-              size={12}
-              className={`transition-transform duration-200 ${
-                isCityDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
         </div>
 
         {/* Expandable Full City List Dropdown */}
         {isCityDropdownOpen && (
           <div className="pt-2 border-t border-black/[0.05] animate-in fade-in-50 duration-150">
-            <div className="text-[10px] font-mono text-[#767D78] uppercase mb-1.5">
+            <label htmlFor="cockpit-city-select" className="text-[10px] font-mono text-[#767D78] uppercase mb-1 block">
               All Regional Charging Grids ({allCityNames.length})
-            </div>
+            </label>
             <select
+              id="cockpit-city-select"
               value={selectedCity}
               onChange={(e) => {
                 onCityChange?.(e.target.value);
                 setIsCityDropdownOpen(false);
               }}
-              className="w-full bg-[#F7F6F2] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-3 py-2 cursor-pointer focus:outline-hidden"
+              className="w-full min-h-[40px] bg-[#FAF9F6] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-3 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#111312]"
             >
               {allCityNames.map((city) => (
                 <option key={city} value={city}>
@@ -170,10 +167,10 @@ export function VehicleCockpit({
             </select>
           </div>
         )}
-      </section>
+      </div>
 
       {/* ──────────────────────────────────────────────────────────────────
-          YOUR VEHICLE HERO SECTION
+          YOUR VEHICLE HERO SECTION (TOP PRIORITY)
          ────────────────────────────────────────────────────────────────── */}
       <section
         aria-label="Your Vehicle Cockpit"
@@ -185,11 +182,17 @@ export function VehicleCockpit({
             <h2 className="text-xs font-mono uppercase tracking-widest text-[#767D78] font-bold">
               Your Vehicle
             </h2>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#111312] leading-tight mt-1 line-clamp-2 break-words">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#111312] leading-tight mt-0.5 line-clamp-1">
               {vehicle.make} {vehicle.model}
             </h1>
-            <div className="text-xs font-mono text-[#525854] mt-0.5">
-              {vehicle.year} • {vehicle.plugType}
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-[#FAF9F6] text-[#111312] px-2 py-0.5 rounded-md border border-black/[0.06]">
+                <Zap size={9.5} className="text-[#16A34A]" aria-hidden="true" />
+                {vehicle.plugType}
+              </span>
+              <span className="text-[11px] font-mono text-[#525854]">
+                {vehicle.year} • {vehicle.usableKwh} kWh
+              </span>
             </div>
           </div>
 
@@ -197,24 +200,25 @@ export function VehicleCockpit({
           <button
             type="button"
             onClick={onOpenGarage}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#111312] bg-[#F5F4EF] hover:bg-[#EAE8E2] border border-black/[0.06] shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0 self-start focus-visible:outline-2 focus-visible:outline-[#111312]"
-            title="Switch or configure vehicle in garage"
+            className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#111312] bg-[#FAF9F6] hover:bg-[#F2EFE9] border border-black/[0.06] shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0 self-start focus-visible:outline-2 focus-visible:outline-[#111312]"
+            title="Switch vehicle in garage"
             aria-label="Switch vehicle"
           >
-            <Car size={14} className="text-[#111312]" />
+            <Car size={14} className="text-[#111312]" aria-hidden="true" />
             <span>Switch</span>
           </button>
         </div>
 
         {/* Central Vehicle Showcase Stage */}
-        <div className="relative w-full h-44 sm:h-48 my-3 rounded-2xl overflow-hidden border border-black/[0.06] bg-gradient-to-b from-[#F7F6F2] via-[#EFECE5] to-[#E2DED5] shadow-2xs flex items-center justify-center">
+        <div className="relative w-full h-40 sm:h-44 my-3 rounded-2xl overflow-hidden border border-black/[0.06] bg-gradient-to-b from-[#F7F6F2] via-[#EFECE5] to-[#E2DED5] shadow-2xs flex items-center justify-center">
           {vehicle.image.toLowerCase().endsWith(".png") ? (
-            <div className="relative w-[92%] h-[80%] flex items-center justify-center">
+            <div className="relative w-[92%] h-[82%] flex items-center justify-center">
               <div className="absolute bottom-1 w-3/4 h-3 bg-black/15 blur-sm rounded-full pointer-events-none" />
               <Image
                 src={vehicle.image}
                 alt={`${vehicle.make} ${vehicle.model}`}
                 fill
+                sizes="(max-width: 480px) 380px, 420px"
                 className="object-contain select-none transition-transform duration-300 hover:scale-[1.02]"
                 priority
               />
@@ -224,6 +228,7 @@ export function VehicleCockpit({
               src={vehicle.image}
               alt={`${vehicle.make} ${vehicle.model}`}
               fill
+              sizes="(max-width: 480px) 380px, 420px"
               className="object-cover select-none transition-transform duration-300 hover:scale-[1.02]"
               priority
             />
@@ -231,8 +236,8 @@ export function VehicleCockpit({
         </div>
 
         {/* Subtitle Calibration Notice */}
-        <div className="text-[10px] font-mono text-[#767D78] text-center pt-1">
-          Simulated vehicle profile • Calibrated from OEM homologation specs
+        <div className="text-[10px] font-mono text-[#767D78] text-center pt-0.5">
+          Calibrated from OEM homologation specs • Real-time physics
         </div>
       </section>
 
@@ -266,7 +271,7 @@ export function VehicleCockpit({
               <span className="text-xs font-semibold text-[#525854]">km</span>
             </div>
             <div className="text-[10px] font-mono text-[#525854] mt-0.5">
-              Mode: <span className="font-semibold text-[#111312] uppercase">{driveMode}</span>
+              Drive: <span className="font-semibold text-[#111312] uppercase">{driveMode}</span>
             </div>
           </div>
 
@@ -283,10 +288,14 @@ export function VehicleCockpit({
             </div>
 
             {/* Automotive Battery Progress Track */}
-            <div className="w-full bg-[#EAE8E2] h-2 rounded-full mt-2 overflow-hidden">
+            <div className="w-full bg-[#EAE8E2] h-2.5 rounded-full mt-2 overflow-hidden border border-black/[0.04]">
               <div
                 className={`h-full transition-all duration-300 rounded-full ${
-                  currentBatteryPct > 20 ? "bg-[#111312]" : "bg-[#DC2626]"
+                  currentBatteryPct > 50
+                    ? "bg-[#16A34A]"
+                    : currentBatteryPct > 20
+                    ? "bg-[#111312]"
+                    : "bg-[#DC2626]"
                 }`}
                 style={{ width: `${Math.max(5, currentBatteryPct)}%` }}
               />
@@ -297,7 +306,7 @@ export function VehicleCockpit({
         {/* Subtle Divider */}
         <div className="border-t border-black/[0.05]" />
 
-        {/* Drive Dynamics Mode Selector */}
+        {/* Drive Dynamics Mode Selector (Min 44px Touch Targets) */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-[#111312]">Drive Dynamics</span>
@@ -313,7 +322,7 @@ export function VehicleCockpit({
           <div
             role="radiogroup"
             aria-label="Drive Mode"
-            className="grid grid-cols-3 gap-1 p-1 bg-[#F5F4EF] rounded-xl border border-black/[0.04]"
+            className="grid grid-cols-3 gap-1.5 p-1 bg-[#F5F4EF] rounded-xl border border-black/[0.04]"
           >
             {[
               { id: "eco" as const, label: "Eco", sub: "+12%" },
@@ -328,7 +337,7 @@ export function VehicleCockpit({
                   role="radio"
                   aria-checked={isSelected}
                   onClick={() => setDriveMode(m.id)}
-                  className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                  className={`min-h-[44px] py-2 px-1 rounded-lg text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                     isSelected
                       ? "bg-[#111312] text-white shadow-2xs font-bold"
                       : "text-[#525854] hover:text-[#111312] font-semibold"
@@ -336,7 +345,7 @@ export function VehicleCockpit({
                 >
                   <div className="text-xs">{m.label}</div>
                   <div
-                    className={`text-[9px] font-mono mt-0.5 ${
+                    className={`text-[9.5px] font-mono mt-0.5 ${
                       isSelected ? "text-[#C8F369]" : "text-[#767D78]"
                     }`}
                   >
@@ -353,11 +362,11 @@ export function VehicleCockpit({
 
         {/* Secondary Vehicle Readiness Strip: Preconditioning & Core Specs */}
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          {/* Battery Preconditioning Action */}
+          {/* Battery Preconditioning Action (Min 44px Touch Target) */}
           <button
             type="button"
             onClick={() => setIsPreconditioning(!isPreconditioning)}
-            className={`p-2.5 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer active:scale-95 ${
+            className={`min-h-[52px] p-2.5 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer active:scale-95 ${
               isPreconditioning
                 ? "bg-[#111312] text-white border-[#111312] shadow-2xs"
                 : "bg-[#FAF9F6] border-black/[0.06] text-[#111312] hover:bg-[#F5F4EF]"
@@ -369,6 +378,7 @@ export function VehicleCockpit({
               <Zap
                 size={14}
                 className={isPreconditioning ? "text-[#C8F369]" : "text-[#16A34A]"}
+                aria-hidden="true"
               />
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
@@ -389,7 +399,7 @@ export function VehicleCockpit({
           </button>
 
           {/* Efficiency Metric */}
-          <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] flex flex-col justify-between text-left">
+          <div className="min-h-[52px] p-2.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] flex flex-col justify-between text-left">
             <span className="text-[9.5px] font-mono uppercase text-[#767D78]">
               Efficiency
             </span>
@@ -402,7 +412,7 @@ export function VehicleCockpit({
           </div>
 
           {/* Max Fast Charging Power */}
-          <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] flex flex-col justify-between text-left">
+          <div className="min-h-[52px] p-2.5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] flex flex-col justify-between text-left">
             <span className="text-[9.5px] font-mono uppercase text-[#767D78]">
               Max DC Rate
             </span>
@@ -416,56 +426,15 @@ export function VehicleCockpit({
         </div>
       </section>
 
-      {/* ──────────────────────────────────────────────────────────────────
-          JOURNEY ENTRY POINT ("Will I Make It?")
-         ────────────────────────────────────────────────────────────────── */}
-      <section
-        aria-label="Journey Planning Simulation"
-        className="bg-[#111312] text-white rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 relative overflow-hidden"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111312] bg-[#C8F369] px-2 py-0.5 rounded-full">
-              Simulator
-            </span>
-            <span className="text-xs font-bold text-white/90">Corridor Dispatch</span>
-          </div>
-          <span className="text-[10px] font-mono text-white/60">Elevation &amp; Range Physics</span>
-        </div>
-
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[#C8F369] shrink-0">
-            <Gauge size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-bold text-white leading-tight">
-              &quot;Will I Make It?&quot; Journey Planner
-            </h3>
-            <p className="text-xs text-white/70 mt-1 leading-snug">
-              Simulate route elevation, corridor energy depletion, and verified en-route fast chargers.
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onOpenJourneyPlanner}
-          className="w-full py-3 px-4 bg-[#C8F369] text-[#111312] font-bold text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-[#D5F87F] active:scale-[0.98] transition-all cursor-pointer shadow-xs focus-visible:outline-2 focus-visible:outline-white"
-        >
-          <span>Start Journey Simulation</span>
-          <ChevronRight size={15} />
-        </button>
-      </section>
-
-      {/* ── Nearest Fast Charger Shortcut (if nearby) ──────────────────── */}
+      {/* ── Nearest Fast Charger Shortcut (Positioned Right Under Readiness) ─── */}
       {nearestUltraStation && (
         <section
           aria-label="Nearest Charger"
           className="bg-white rounded-2xl p-3.5 border border-black/[0.06] shadow-2xs flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#FAF9F6] border border-black/[0.06] flex items-center justify-center text-[#16A34A] shrink-0">
-              <Zap size={14} />
+            <div className="w-9 h-9 rounded-xl bg-[#FAF9F6] border border-black/[0.06] flex items-center justify-center text-[#16A34A] shrink-0">
+              <Zap size={16} aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <div className="text-[10px] font-mono text-[#767D78]">
@@ -483,16 +452,16 @@ export function VehicleCockpit({
           <button
             type="button"
             onClick={onNavigateToNearest}
-            className="px-3 py-1.5 bg-[#FAF9F6] hover:bg-[#EAE8E2] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-lg flex items-center gap-1 active:scale-95 transition-all shrink-0 cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 bg-[#FAF9F6] hover:bg-[#EAE8E2] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl flex items-center gap-1 active:scale-95 transition-all shrink-0 cursor-pointer"
           >
-            <Navigation size={12} className="text-[#16A34A]" />
+            <Navigation size={12} className="text-[#16A34A]" aria-hidden="true" />
             <span>Route</span>
           </button>
         </section>
       )}
 
       {/* ──────────────────────────────────────────────────────────────────
-          CHASSIS SPECIFICATIONS & OEM HOMOLOGATION
+          CHASSIS SPECIFICATIONS & OEM HOMOLOGATION (COLLAPSIBLE)
          ────────────────────────────────────────────────────────────────── */}
       <section
         aria-label="Chassis Specifications and Homologation"
@@ -501,7 +470,7 @@ export function VehicleCockpit({
         <button
           type="button"
           onClick={() => setShowDiagnostics(!showDiagnostics)}
-          className="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold text-[#111312] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
+          className="w-full min-h-[48px] px-4 py-3 flex items-center justify-between text-xs font-semibold text-[#111312] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
           aria-expanded={showDiagnostics}
         >
           <div className="flex items-center gap-2">
@@ -509,7 +478,7 @@ export function VehicleCockpit({
               Chassis Specs
             </span>
             <span className="text-xs font-bold text-[#111312]">
-              OEM Specifications &amp; Homologation
+              OEM Specifications
             </span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-[#525854]">
@@ -519,6 +488,7 @@ export function VehicleCockpit({
               className={`transition-transform duration-200 ${
                 showDiagnostics ? "rotate-180" : ""
               }`}
+              aria-hidden="true"
             />
           </div>
         </button>
