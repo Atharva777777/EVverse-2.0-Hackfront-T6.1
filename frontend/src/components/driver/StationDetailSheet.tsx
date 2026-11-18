@@ -26,7 +26,6 @@ import {
   Star,
   Car,
 } from "lucide-react";
-import { ParkingBookingModal } from "./ParkingBookingModal";
 import type { EVVehicle } from "./VehicleCockpit";
 
 interface StationDetailSheetProps {
@@ -41,7 +40,6 @@ interface StationDetailSheetProps {
   activeVehicleSoc?: number;
   vehicleWltpKm?: number;
   activeVehicle?: EVVehicle;
-  onOpenBookingModal?: () => void;
 }
 
 export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
@@ -56,9 +54,7 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
   activeVehicleSoc = 75,
   vehicleWltpKm = 470,
   activeVehicle,
-  onOpenBookingModal,
 }) => {
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isReportingOpen, setIsReportingOpen] = useState(false);
   const [reportSuccessMessage, setReportSuccessMessage] = useState<string | null>(null);
   const [reportCategory, setReportCategory] = useState<StationReport["category"]>(
@@ -507,31 +503,14 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
               <span>Start Navigation</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onOpenBookingModal) {
-                    onOpenBookingModal();
-                  } else {
-                    setIsBookingModalOpen(true);
-                  }
-                }}
-                className="min-h-[44px] py-2.5 bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#DCFCE7] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#15803D]"
-              >
-                <Zap size={14} className="text-[#16A34A]" aria-hidden="true" />
-                <span>Book Stall & Charge</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onStartCharging(station)}
-                className="min-h-[44px] py-2.5 bg-[#C8F369] text-[#111312] border border-[#111312] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#BCE95D] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
-              >
-                <Zap size={14} aria-hidden="true" />
-                <span>Start Charging</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onStartCharging(station)}
+              className="w-full min-h-[44px] py-2.5 px-4 bg-[#C8F369] text-[#111312] border border-[#111312] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#BCE95D] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+            >
+              <Zap size={14} aria-hidden="true" />
+              <span>Start Charging</span>
+            </button>
 
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${details.latitude},${details.longitude}`}
@@ -546,15 +525,6 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
 
         </div>
       </aside>
-
-      {/* Parking Spot Booking Modal */}
-      <ParkingBookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        station={station}
-        onStartNavigation={(st: any) => onStartNavigation(st)}
-        activeVehicle={activeVehicle}
-      />
 
       {/* Issue Reporting Modal */}
       {isReportingOpen && (

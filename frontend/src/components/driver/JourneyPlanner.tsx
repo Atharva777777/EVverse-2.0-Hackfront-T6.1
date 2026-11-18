@@ -29,6 +29,7 @@ import {
   REGIONAL_CORRIDOR_DESTINATIONS,
   type JourneyDestination,
 } from "@/lib/journeyRouting";
+import { fetchRoadRoute } from "@/lib/routeService";
 
 interface JourneyPlannerProps {
   activeVehicle: EVVehicle;
@@ -329,11 +330,10 @@ export function JourneyPlanner({
                   setCustomDestination(dest);
                   setSelectedStopId(null);
                 }}
-                className={`min-h-[38px] px-3 py-1.5 rounded-xl border text-left shrink-0 transition-all cursor-pointer flex items-center gap-2 ${
-                  isSelected
-                    ? "bg-[#111312] text-white border-[#111312] shadow-xs"
-                    : "bg-white text-[#111312] border-black/[0.08] hover:bg-[#F4F3EE]"
-                }`}
+                className={`min-h-[38px] px-3 py-1.5 rounded-xl border text-left shrink-0 transition-all cursor-pointer flex items-center gap-2 ${isSelected
+                  ? "bg-[#111312] text-white border-[#111312] shadow-xs"
+                  : "bg-white text-[#111312] border-black/[0.08] hover:bg-[#F4F3EE]"
+                  }`}
               >
                 <MapPin
                   size={13}
@@ -342,9 +342,8 @@ export function JourneyPlanner({
                 <div>
                   <div className="text-xs font-bold leading-tight">{dest.name}</div>
                   <div
-                    className={`text-[9.5px] font-mono ${
-                      isSelected ? "text-[#C8F369]" : "text-[#767D78]"
-                    }`}
+                    className={`text-[9.5px] font-mono ${isSelected ? "text-[#C8F369]" : "text-[#767D78]"
+                      }`}
                   >
                     {dest.distanceKm} km
                     {dest.elevationGainM ? ` • +${dest.elevationGainM}m` : ""}
@@ -552,12 +551,11 @@ export function JourneyPlanner({
                     onClick={() =>
                       setSelectedStopId(planResponse.charging.primary_stop?.station_id || null)
                     }
-                    className={`px-2 py-0.5 rounded-md border cursor-pointer font-bold transition-all ${
-                      effectivePrimaryStop?.station_id ===
+                    className={`px-2 py-0.5 rounded-md border cursor-pointer font-bold transition-all ${effectivePrimaryStop?.station_id ===
                       planResponse.charging.primary_stop?.station_id
-                        ? "bg-[#111312] text-white border-[#111312]"
-                        : "bg-white text-[#767D78] border-black/[0.08] hover:bg-[#F4F3EE]"
-                    }`}
+                      ? "bg-[#111312] text-white border-[#111312]"
+                      : "bg-white text-[#767D78] border-black/[0.08] hover:bg-[#F4F3EE]"
+                      }`}
                   >
                     Primary
                   </button>
@@ -566,12 +564,11 @@ export function JourneyPlanner({
                     onClick={() =>
                       setSelectedStopId(planResponse.charging.backup_stop?.station_id || null)
                     }
-                    className={`px-2 py-0.5 rounded-md border cursor-pointer font-bold transition-all ${
-                      effectivePrimaryStop?.station_id ===
+                    className={`px-2 py-0.5 rounded-md border cursor-pointer font-bold transition-all ${effectivePrimaryStop?.station_id ===
                       planResponse.charging.backup_stop?.station_id
-                        ? "bg-[#111312] text-white border-[#111312]"
-                        : "bg-white text-[#767D78] border-black/[0.08] hover:bg-[#F4F3EE]"
-                    }`}
+                      ? "bg-[#111312] text-white border-[#111312]"
+                      : "bg-white text-[#767D78] border-black/[0.08] hover:bg-[#F4F3EE]"
+                      }`}
                   >
                     Backup
                   </button>
@@ -581,11 +578,10 @@ export function JourneyPlanner({
 
             {effectivePrimaryStop ? (
               <div
-                className={`p-3.5 rounded-2xl border shadow-xs space-y-2.5 ${
-                  isChargingNeeded
-                    ? "bg-[#FEF2F2]/60 border-[#FECACA]"
-                    : "bg-[#FFFBEB]/70 border-[#FDE68A]"
-                }`}
+                className={`p-3.5 rounded-2xl border shadow-xs space-y-2.5 ${isChargingNeeded
+                  ? "bg-[#FEF2F2]/60 border-[#FECACA]"
+                  : "bg-[#FFFBEB]/70 border-[#FDE68A]"
+                  }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -705,11 +701,10 @@ export function JourneyPlanner({
                       key={mode}
                       type="button"
                       onClick={() => setHvacMode(mode)}
-                      className={`py-1 text-[11px] font-medium rounded-lg border capitalize cursor-pointer transition-colors ${
-                        hvacMode === mode
-                          ? "bg-[#111312] text-white border-[#111312]"
-                          : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
-                      }`}
+                      className={`py-1 text-[11px] font-medium rounded-lg border capitalize cursor-pointer transition-colors ${hvacMode === mode
+                        ? "bg-[#111312] text-white border-[#111312]"
+                        : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
+                        }`}
                     >
                       {mode}
                     </button>
@@ -726,17 +721,16 @@ export function JourneyPlanner({
                       key={style}
                       type="button"
                       onClick={() => setDrivingStyle(style)}
-                      className={`py-1 text-[11px] font-medium rounded-lg border capitalize cursor-pointer transition-colors ${
-                        drivingStyle === style
-                          ? "bg-[#111312] text-white border-[#111312]"
-                          : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
-                      }`}
+                      className={`py-1 text-[11px] font-medium rounded-lg border capitalize cursor-pointer transition-colors ${drivingStyle === style
+                        ? "bg-[#111312] text-white border-[#111312]"
+                        : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
+                        }`}
                     >
                       {style === "eco"
                         ? "Eco (-8%)"
                         : style === "sport"
-                        ? "Sport (+15%)"
-                        : "Normal"}
+                          ? "Sport (+15%)"
+                          : "Normal"}
                     </button>
                   ))}
                 </div>
@@ -755,11 +749,10 @@ export function JourneyPlanner({
                       key={p.kg}
                       type="button"
                       onClick={() => setPayloadKg(p.kg)}
-                      className={`py-1 text-[10.5px] font-medium rounded-lg border cursor-pointer transition-colors ${
-                        payloadKg === p.kg
-                          ? "bg-[#111312] text-white border-[#111312]"
-                          : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
-                      }`}
+                      className={`py-1 text-[10.5px] font-medium rounded-lg border cursor-pointer transition-colors ${payloadKg === p.kg
+                        ? "bg-[#111312] text-white border-[#111312]"
+                        : "bg-[#FAF9F6] text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
+                        }`}
                     >
                       {p.label}
                     </button>

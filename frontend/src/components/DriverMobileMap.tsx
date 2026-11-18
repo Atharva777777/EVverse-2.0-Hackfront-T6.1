@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { Crosshair, Plus, Minus } from "lucide-react";
+import { Crosshair, Plus, Minus, AlertTriangle, RefreshCw } from "lucide-react";
 import type * as L from "leaflet";
 import type { LiveStation } from "@/types/api";
+import type { RoadRoute } from "@/lib/routeService";
 
 interface DriverMobileMapProps {
   center: [number, number];
@@ -12,9 +13,14 @@ interface DriverMobileMapProps {
   stations: LiveStation[];
   selectedStation: LiveStation | null;
   onStationSelect: (station: LiveStation) => void;
-  navigationStation: LiveStation | null;
+  // Real road route integration
+  activeRoute?: RoadRoute | null;
+  activeLegIndex?: number;
+  driverLocation?: [number, number] | null;
+  driverHeading?: number | null;
   isNavigating: boolean;
-  navProgress: number; // 0 to 1
+  routeError?: string | null;
+  onRetryRoute?: () => void;
 }
 
 export default function DriverMobileMap({
@@ -24,16 +30,22 @@ export default function DriverMobileMap({
   stations,
   selectedStation,
   onStationSelect,
-  navigationStation,
+  activeRoute,
+  activeLegIndex = 0,
+  driverLocation,
+  driverHeading,
   isNavigating,
-  navProgress,
+  routeError,
+  onRetryRoute,
 }: DriverMobileMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // ── Initialize Leaflet Map ────────────────────────────────────────────────
+  const currentPos = driverLocation || userLocation;
+
+  // ── Initialize Leaflet Map with CartoDB Voyager Legal Open Tiles ───────────
   useEffect(() => {
     let map: L.Map | null = null;
     let isMounted = true;
@@ -47,17 +59,15 @@ export default function DriverMobileMap({
         center,
         zoom,
         zoomControl: false,
-        attributionControl: false,
+        attributionControl: true,
       });
 
-      // Clean Google Maps tiles (no watermark, crisp mobile navigation style)
-      L.tileLayer(
-        "https://mt{s}.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}",
-        {
-          maxZoom: 20,
-          subdomains: ["0", "1", "2", "3"],
-        }
-      ).addTo(map);
+      // OpenStreetMap standard tile layer — clean, free, keyless, and policy-compliant
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+      }).addTo(map);
 
       mapInstanceRef.current = map;
       markersLayerRef.current = L.layerGroup().addTo(map);
@@ -75,28 +85,25 @@ export default function DriverMobileMap({
     };
   }, []);
 
-  // ── Update View on center change or navigation ───────────────────────────
+  // ── Update Viewport on center change or active route ───────────────────────
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (map) {
-      if (isNavigating && navigationStation) {
-        import("leaflet").then(({ default: L }) => {
-          const bounds = L.latLngBounds([
-            userLocation,
-            [navigationStation.latitude, navigationStation.longitude],
-          ]);
-          map.fitBounds(bounds.pad(0.28), {
-            animate: true,
-            duration: 0.8,
-          });
-        });
-      } else {
-        map.setView(center, zoom, { animate: true, duration: 0.6 });
-      }
-    }
-  }, [center[0], center[1], zoom, isNavigating, navigationStation]);
+    if (!map) return;
 
-  // ── Render Markers ───────────────────────────────────────────────────────
+    if (isNavigating && activeRoute && activeRoute.success && activeRoute.allCoordinates.length > 0) {
+      import("leaflet").then(({ default: L }) => {
+        const bounds = L.latLngBounds(activeRoute.allCoordinates);
+        map.fitBounds(bounds.pad(0.18), {
+          animate: true,
+          duration: 0.8,
+        });
+      });
+    } else if (!isNavigating) {
+      map.setView(center, zoom, { animate: true, duration: 0.6 });
+    }
+  }, [center[0], center[1], zoom, isNavigating, activeRoute]);
+
+  // ── Render Station and Driver Markers ─────────────────────────────────────
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markersLayer = markersLayerRef.current;
@@ -105,60 +112,70 @@ export default function DriverMobileMap({
     import("leaflet").then(({ default: L }) => {
       markersLayer.clearLayers();
 
-      // 1. User Location Pulse Pin
+      // 1. Driver / User Location Marker (with heading direction if available)
+      const hasHeading = typeof driverHeading === "number" && !isNaN(driverHeading);
+      const headingRotation = hasHeading ? `transform: rotate(${driverHeading}deg);` : "";
+
       const userHtml = `
-        <div style="position:relative;width:24px;height:24px;transform:translate(-12px,-12px);">
-          <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(201,243,106,0.35);animation:pulse-1 2s infinite;"></div>
-          <div style="position:absolute;inset:0;border-radius:50%;background:#151817;border:3px solid #C9F36A;box-shadow:0 3px 12px rgba(21,24,23,0.35);display:flex;align-items:center;justify-content:center;">
-            <div style="width:6px;height:6px;border-radius:50%;background:#C9F36A;"></div>
+        <div style="position:relative;width:30px;height:30px;transform:translate(-15px,-15px);">
+          <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(200,243,105,0.35);animation:pulse-1 2s infinite;"></div>
+          <div style="position:absolute;inset:0;border-radius:50%;background:#111312;border:3px solid #C8F369;box-shadow:0 3px 12px rgba(17,19,18,0.4);display:flex;align-items:center;justify-content:center;${headingRotation}">
+            ${
+              hasHeading
+                ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>`
+                : `<div style="width:8px;height:8px;border-radius:50%;background:#C8F369;"></div>`
+            }
           </div>
         </div>
       `;
       const userIcon = L.divIcon({ html: userHtml, className: "", iconSize: [0, 0] });
-      L.marker(userLocation, { icon: userIcon, zIndexOffset: 1000 }).addTo(
-        markersLayer
-      );
+      L.marker(currentPos, { icon: userIcon, zIndexOffset: 1200 }).addTo(markersLayer);
 
-      // 2. Station Markers
+      // 2. Station Markers (Rendered when browsing or selecting)
       stations.forEach((st) => {
         const isSelected = selectedStation?.station_id === st.station_id;
-        const isTarget = navigationStation?.station_id === st.station_id;
+        const isChargingWaypoint =
+          activeRoute?.chargingWaypointName === st.name ||
+          (activeRoute?.chargingWaypointCoords &&
+            Math.abs(st.latitude - activeRoute.chargingWaypointCoords[0]) < 0.001 &&
+            Math.abs(st.longitude - activeRoute.chargingWaypointCoords[1]) < 0.001);
+
         const isUltra = (st.power_kw ?? 0) >= 150;
         const isFast = (st.power_kw ?? 0) >= 50;
 
-        let pinBg = "#151817";
+        let pinBg = "#111312";
         let pinBorder = "#E2E5DF";
-        let boltColor = "#C9F36A";
+        let boltColor = "#C8F369";
 
-        if (isTarget) {
-          pinBg = "#151817";
-          pinBorder = "#C9F36A";
-          boltColor = "#C9F36A";
+        if (isChargingWaypoint) {
+          pinBg = "#111312";
+          pinBorder = "#C8F369";
+          boltColor = "#C8F369";
         } else if (isSelected) {
-          pinBg = "#151817";
-          pinBorder = "#C9F36A";
+          pinBg = "#111312";
+          pinBorder = "#C8F369";
           boltColor = "#ffffff";
         } else if (isUltra) {
-          pinBg = "#151817";
-          pinBorder = "#C9F36A";
-          boltColor = "#C9F36A";
+          pinBg = "#111312";
+          pinBorder = "#C8F369";
+          boltColor = "#C8F369";
         } else if (isFast) {
-          pinBg = "#2A332C";
+          pinBg = "#252B26";
           pinBorder = "#E2E5DF";
           boltColor = "#A3D95B";
         } else {
           pinBg = "#ffffff";
           pinBorder = "#D0D5CC";
-          boltColor = "#151817";
+          boltColor = "#111312";
         }
 
-        const size = isSelected || isTarget ? 34 : 28;
+        const size = isSelected || isChargingWaypoint ? 34 : 28;
         const offset = size / 2;
-        const scale = isSelected || isTarget ? "transform: scale(1.18);" : "";
+        const scale = isSelected || isChargingWaypoint ? "transform: scale(1.15);" : "";
         const glow =
-          isSelected || isTarget
-            ? "box-shadow: 0 0 16px rgba(201, 243, 106, 0.7), 0 4px 12px rgba(0,0,0,0.25);"
-            : "box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);";
+          isSelected || isChargingWaypoint
+            ? "box-shadow: 0 0 16px rgba(200, 243, 105, 0.7), 0 4px 12px rgba(0,0,0,0.3);"
+            : "box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);";
 
         const pinHtml = `
           <div style="position:relative;width:${size}px;height:${size}px;transform:translate(-${offset}px,-${offset}px);cursor:pointer;transition:all 0.2s ease;">
@@ -173,7 +190,7 @@ export default function DriverMobileMap({
         const icon = L.divIcon({ html: pinHtml, className: "", iconSize: [0, 0] });
         const marker = L.marker([st.latitude, st.longitude], {
           icon,
-          zIndexOffset: isSelected || isTarget ? 900 : 400,
+          zIndexOffset: isSelected || isChargingWaypoint ? 950 : 400,
         }).addTo(markersLayer);
 
         marker.on("click", () => {
@@ -181,9 +198,16 @@ export default function DriverMobileMap({
         });
       });
     });
-  }, [stations, selectedStation?.station_id, navigationStation?.station_id, userLocation[0], userLocation[1]]);
+  }, [
+    stations,
+    selectedStation?.station_id,
+    activeRoute?.chargingWaypointCoords,
+    currentPos[0],
+    currentPos[1],
+    driverHeading,
+  ]);
 
-  // ── Render Navigation Route ───────────────────────────────────────────────
+  // ── Render Real Road Route Geometry ───────────────────────────────────────
   useEffect(() => {
     const map = mapInstanceRef.current;
     const routeLayer = routeLayerRef.current;
@@ -192,49 +216,80 @@ export default function DriverMobileMap({
     import("leaflet").then(({ default: L }) => {
       routeLayer.clearLayers();
 
-      if (isNavigating && navigationStation) {
-        const start = userLocation;
-        const end: [number, number] = [navigationStation.latitude, navigationStation.longitude];
+      if (!isNavigating || !activeRoute || !activeRoute.success) {
+        return;
+      }
 
-        // Smooth curved polyline
-        const midLat = (start[0] + end[0]) / 2 + (end[1] - start[1]) * 0.12;
-        const midLng = (start[1] + end[1]) / 2 - (end[0] - start[0]) * 0.12;
+      // 1. Render Each Real Road Leg Polyline
+      activeRoute.legs.forEach((leg, index) => {
+        const isCurrentLeg = index === activeLegIndex;
 
-        // Route ambient glow
-        L.polyline([start, [midLat, midLng], end], {
-          color: "rgba(201, 243, 106, 0.35)",
-          weight: 10,
-          lineCap: "round",
-          lineJoin: "round",
-        }).addTo(routeLayer);
+        if (isCurrentLeg) {
+          // Current active leg: High visibility volt glow & core polyline
+          L.polyline(leg.coordinates, {
+            color: "rgba(200, 243, 105, 0.45)",
+            weight: 9,
+            lineCap: "round",
+            lineJoin: "round",
+          }).addTo(routeLayer);
 
-        // Core route dashed volt line
-        L.polyline([start, [midLat, midLng], end], {
-          color: "#151817",
-          weight: 4.5,
-          dashArray: "8, 6",
-          lineCap: "round",
-          lineJoin: "round",
-        }).addTo(routeLayer);
+          L.polyline(leg.coordinates, {
+            color: "#111312",
+            weight: 4.5,
+            lineCap: "round",
+            lineJoin: "round",
+          }).addTo(routeLayer);
+        } else {
+          // Subsequent leg (e.g. from Charging Stop to Final Destination):
+          // Dashed green highway path
+          L.polyline(leg.coordinates, {
+            color: "#16A34A",
+            weight: 4,
+            dashArray: "7, 6",
+            lineCap: "round",
+            lineJoin: "round",
+          }).addTo(routeLayer);
+        }
+      });
 
-        // Animated Vehicle Pin along route
-        const currentLat = start[0] + (end[0] - start[0]) * navProgress;
-        const currentLng = start[1] + (end[1] - start[1]) * navProgress;
-
-        const carHtml = `
-          <div style="position:relative;width:28px;height:28px;transform:translate(-14px,-14px);">
-            <div style="width:28px;height:28px;border-radius:50%;background:#151817;border:2.5px solid #C9F36A;box-shadow:0 4px 14px rgba(21,24,23,0.4);display:flex;align-items:center;justify-content:center;">
-              <div style="width:8px;height:8px;border-radius:50%;background:#C9F36A;"></div>
+      // 2. Charging Waypoint Marker (if present)
+      if (activeRoute.hasChargingWaypoint && activeRoute.chargingWaypointCoords) {
+        const wpCoords = activeRoute.chargingWaypointCoords;
+        const waypointHtml = `
+          <div style="position:relative;width:34px;height:34px;transform:translate(-17px,-17px);cursor:pointer;">
+            <div style="width:34px;height:34px;border-radius:50%;background:#111312;border:2.5px solid #C8F369;box-shadow:0 0 16px rgba(200,243,105,0.7);display:flex;align-items:center;justify-content:center;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+            <div style="position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#111312;color:#C8F369;font-family:monospace;font-size:9.5px;font-weight:bold;padding:2px 6px;border-radius:6px;border:1px solid rgba(200,243,105,0.4);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+              CHARGER STOP
             </div>
           </div>
         `;
-        const carIcon = L.divIcon({ html: carHtml, className: "", iconSize: [0, 0] });
-        L.marker([currentLat, currentLng], { icon: carIcon, zIndexOffset: 1200 }).addTo(
-          routeLayer
-        );
+        const waypointIcon = L.divIcon({ html: waypointHtml, className: "", iconSize: [0, 0] });
+        L.marker(wpCoords, { icon: waypointIcon, zIndexOffset: 1100 }).addTo(routeLayer);
       }
+
+      // 3. Final Destination Checkered Flag Marker
+      const destCoords = activeRoute.destinationCoords;
+      const destHtml = `
+        <div style="position:relative;width:34px;height:34px;transform:translate(-17px,-17px);cursor:pointer;">
+          <div style="width:34px;height:34px;border-radius:50%;background:#111312;border:2.5px solid #FFFFFF;box-shadow:0 4px 14px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+              <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+          </div>
+          <div style="position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#111312;color:#FFFFFF;font-family:sans-serif;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+            ${activeRoute.destinationName}
+          </div>
+        </div>
+      `;
+      const destIcon = L.divIcon({ html: destHtml, className: "", iconSize: [0, 0] });
+      L.marker(destCoords, { icon: destIcon, zIndexOffset: 1050 }).addTo(routeLayer);
     });
-  }, [isNavigating, navigationStation, userLocation, navProgress]);
+  }, [isNavigating, activeRoute, activeLegIndex]);
 
   return (
     <div className="relative w-full h-full isolate overflow-hidden z-0">
@@ -247,13 +302,36 @@ export default function DriverMobileMap({
         }}
       />
 
+      {/* Route Error Notification on Map */}
+      {routeError && (
+        <div className="absolute top-4 left-4 right-4 z-20 bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] p-3 rounded-2xl shadow-xl flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-[#DC2626] shrink-0" />
+            <span className="font-medium">{routeError}</span>
+          </div>
+          {onRetryRoute && (
+            <button
+              type="button"
+              onClick={onRetryRoute}
+              className="px-2.5 py-1 bg-white border border-[#FECACA] rounded-lg text-[#991B1B] font-bold text-[11px] flex items-center gap-1 hover:bg-[#FEE2E2] cursor-pointer shrink-0 ml-2"
+            >
+              <RefreshCw size={11} />
+              Retry
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Floating Map Controls */}
       <div className="absolute right-3 bottom-24 z-10 flex flex-col gap-2">
         <button
           type="button"
           onClick={() => {
             if (mapInstanceRef.current) {
-              mapInstanceRef.current.setView(userLocation, 14, { animate: true, duration: 0.6 });
+              mapInstanceRef.current.setView(currentPos, 14, {
+                animate: true,
+                duration: 0.6,
+              });
             }
           }}
           aria-label="Center map on my location"

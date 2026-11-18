@@ -15,7 +15,6 @@ import { DriverDrawer } from "@/components/driver/DriverDrawer";
 import { VehicleCockpit, EVVehicle } from "@/components/driver/VehicleCockpit";
 import { JourneyPlanner } from "@/components/driver/JourneyPlanner";
 import { ChargingConsole } from "@/components/driver/ChargingConsole";
-import { GarageFleet } from "@/components/driver/GarageFleet";
 import { VehicleManager } from "@/components/driver/VehicleManager";
 import {
   LoadingSkeleton,
@@ -25,17 +24,14 @@ import {
 } from "@/components/driver/StatusStates";
 import { StationDetailSheet } from "@/components/driver/StationDetailSheet";
 import { LiveDataSourceSheet } from "@/components/driver/LiveDataSourceSheet";
+import { NavigationHUD } from "@/components/driver/NavigationHUD";
 import {
-  ParkingBookingModal,
-  type ParkingBooking,
-} from "@/components/driver/ParkingBookingModal";
-import {
-  MONAD_CONFIG,
-  getExistingAccounts,
-  getCurrentChainId,
-  requestWalletAccounts,
-  truncateAddress,
-} from "@/lib/monadPayment";
+  fetchRoadRoute,
+  type RoadRoute,
+  evaluateDriverPositionOnRoute,
+  calculateDistanceMeters,
+} from "@/lib/routeService";
+
 import {
   syncFavouritesWithBackend,
   addFavouriteToBackend,
@@ -107,9 +103,9 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return +(R * c).toFixed(1);
 }
@@ -164,14 +160,16 @@ export default function EVVerseDriverPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("manage") === "1" || params.get("garage") === "1") {
-        setIsVehicleManagerOpen(true);
-      }
-      if (params.get("menu") === "1" || params.get("drawer") === "1") {
-        setIsDrawerOpen(true);
-      }
-      if (params.get("tab") === "profile") {
-        setActiveTab("profile");
+      const shouldManage = params.get("manage") === "1" || params.get("garage") === "1";
+      const shouldDrawer = params.get("menu") === "1" || params.get("drawer") === "1";
+      const tabParam = params.get("tab");
+
+      if (shouldManage || shouldDrawer || tabParam) {
+        requestAnimationFrame(() => {
+          if (shouldManage) setIsVehicleManagerOpen(true);
+          if (shouldDrawer) setIsDrawerOpen(true);
+          if (tabParam === "profile") setActiveTab("profile");
+        });
       }
     }
   }, []);
@@ -212,11 +210,18 @@ export default function EVVerseDriverPage() {
   const [onlySaved, setOnlySaved] = useState(false);
   const [savedStationIds, setSavedStationIds] = useState<Set<string>>(new Set());
 
-  // In-app Navigation State
-  const [navStation, setNavStation] = useState<DriverStation | null>(null);
-  const [navProgress, setNavProgress] = useState(0);
+  // Real Road In-app Navigation & Multi-Leg GPS State
   const [isNavigating, setIsNavigating] = useState(false);
-  const navIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
+  const [activeRoute, setActiveRoute] = useState<RoadRoute | null>(null);
+  const [activeLegIndex, setActiveLegIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [driverLocation, setDriverLocation] = useState<[number, number] | null>(null);
+  const [driverHeading, setDriverHeading] = useState<number | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<"prompt" | "active" | "denied" | "unavailable">("prompt");
+  const [isOffRoute, setIsOffRoute] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
 
   // Charging Session State
   const [isCharging, setIsCharging] = useState(false);
@@ -287,33 +292,7 @@ export default function EVVerseDriverPage() {
     setCurrentBatteryPct(activeVehicle.currentBatteryPct);
   }
 
-  // Active Spot Booking State
-  const [activeSpotBooking, setActiveSpotBooking] = useState<ParkingBooking | null>(null);
-
-  useEffect(() => {
-    const checkBooking = () => {
-      try {
-        const stored = localStorage.getItem("evverse_active_spot_booking");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.expiryTimestamp > Date.now()) {
-            setActiveSpotBooking(parsed);
-            return;
-          }
-        }
-        setActiveSpotBooking(null);
-      } catch {
-        setActiveSpotBooking(null);
-      }
-    };
-    checkBooking();
-    window.addEventListener("evverse-spot-booking-changed", checkBooking);
-    const interval = setInterval(checkBooking, 4000);
-    return () => {
-      window.removeEventListener("evverse-spot-booking-changed", checkBooking);
-      clearInterval(interval);
-    };
-  }, []);
+  // Active Spot Booking State (localStorage polling removed — booking feature removed)
 
   const [deployedStations, setDeployedStations] = useState(getDeployedStations);
 
@@ -475,105 +454,6 @@ export default function EVVerseDriverPage() {
     return null;
   }, [stationsWithDistance]);
 
-  // Monad Testnet Payment Modal State & Web3 Wallet Sync
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-  const [driverWalletAddress, setDriverWalletAddress] = useState<string | null>(null);
-  const [driverWalletChainId, setDriverWalletChainId] = useState<string | null>(null);
-  const [isDriverConnectingWallet, setIsDriverConnectingWallet] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.ethereum) return;
-
-    getExistingAccounts().then((accounts) => {
-      if (accounts && accounts.length > 0) {
-        setDriverWalletAddress(accounts[0]);
-      }
-    });
-
-    getCurrentChainId().then((chainId) => {
-      if (chainId) setDriverWalletChainId(chainId.toLowerCase());
-    });
-
-    const handleAccountsChanged = (accounts: unknown) => {
-      const accs = accounts as string[];
-      if (accs && accs.length > 0) {
-        setDriverWalletAddress(accs[0]);
-      } else {
-        setDriverWalletAddress(null);
-      }
-    };
-
-    const handleChainChanged = (chainId: unknown) => {
-      if (typeof chainId === "string") {
-        setDriverWalletChainId(chainId.toLowerCase());
-      }
-    };
-
-    window.ethereum.on?.("accountsChanged", handleAccountsChanged);
-    window.ethereum.on?.("chainChanged", handleChainChanged);
-
-    return () => {
-      window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
-      window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
-    };
-  }, []);
-
-  const isDriverMonadActive =
-    driverWalletChainId === MONAD_CONFIG.chainIdHex.toLowerCase();
-
-  const handleDriverConnectWallet = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsDriverConnectingWallet(true);
-    try {
-      const accounts = await requestWalletAccounts();
-      if (accounts && accounts.length > 0) {
-        setDriverWalletAddress(accounts[0]);
-      }
-      const chain = await getCurrentChainId();
-      if (chain) setDriverWalletChainId(chain.toLowerCase());
-    } catch (err) {
-      console.warn("[EVverse Driver Wallet Connect]:", err);
-    } finally {
-      setIsDriverConnectingWallet(false);
-    }
-  };
-
-  // Derive target station for Monad booking/checkout flow
-  const paymentTargetStation = useMemo<LiveStation>(() => {
-    if (selectedStation) return selectedStation;
-    if (activeSpotBooking) {
-      const booked = stationsWithDistance.find((s) => s.station_id === activeSpotBooking.stationId);
-      if (booked) return booked;
-    }
-    if (nearestUltraStation?.raw) return nearestUltraStation.raw;
-    if (filteredStations.length > 0) return filteredStations[0];
-    if (stationsWithDistance.length > 0) return stationsWithDistance[0];
-    return {
-      station_id: `EVV-MONAD-${selectedCity.toUpperCase()}-01`,
-      name: `${selectedCity} Central Monad Fast Charger`,
-      latitude: cityConfig.lat,
-      longitude: cityConfig.lng,
-      address: `Central Hub, ${selectedCity}`,
-      operator: "EVverse Monad Network",
-      status: "Operational",
-      is_operational: true,
-      power_kw: 150,
-      bays: 4,
-      connector_types: [activeVehicle.plugType, "CCS2 Combo", "Type 2"],
-      usage_cost: "$0.28/kWh",
-      source: "open_charge_map",
-    };
-  }, [
-    selectedStation,
-    activeSpotBooking,
-    stationsWithDistance,
-    nearestUltraStation,
-    filteredStations,
-    selectedCity,
-    cityConfig,
-    activeVehicle.plugType,
-  ]);
-
   // Automotive range calculation physics formula:
   // Range (km) = (Usable Battery kWh * (SoC / 100)) / (Efficiency kWh/100km / 100) * DriveModeFactor * HvacFactor
   const calibratedRangeKm = useMemo(() => {
@@ -669,33 +549,115 @@ export default function EVVerseDriverPage() {
     });
   };
 
-  // Launch in-app navigation
-  const startNavigation = (station: DriverStation) => {
-    setNavStation(station);
+  // Launch real road navigation
+  const startRoadNavigation = async ({
+    destination,
+    destinationName,
+    chargingWaypoint,
+  }: {
+    destination: [number, number];
+    destinationName: string;
+    chargingWaypoint?: {
+      name: string;
+      latitude: number;
+      longitude: number;
+    } | null;
+  }) => {
     setIsNavigating(true);
-    setNavProgress(0);
+    setIsRouteLoading(true);
+    setRouteError(null);
+    setActiveLegIndex(0);
+    setCurrentStepIndex(0);
     setActiveTab("explore");
     setIsStationDetailOpen(false);
 
-    if (navIntervalRef.current) clearInterval(navIntervalRef.current);
-    navIntervalRef.current = setInterval(() => {
-      setNavProgress((prev) => {
-        if (prev >= 1) {
-          if (navIntervalRef.current) clearInterval(navIntervalRef.current);
-          return 1;
-        }
-        return prev + 0.03;
-      });
-    }, 500);
+    const startPos = driverLocation || userLocation;
+
+    // Start watchPosition for real GPS device tracking
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setDriverLocation(coords);
+          setGpsStatus("active");
+          if (typeof pos.coords.heading === "number" && !isNaN(pos.coords.heading)) {
+            setDriverHeading(pos.coords.heading);
+          }
+        },
+        (err) => {
+          console.warn("[EVverse GPS] Location tracking notice:", err.message);
+          setGpsStatus(err.code === 1 ? "denied" : "unavailable");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
+      );
+    }
+
+    // Fetch real road route
+    const res = await fetchRoadRoute({
+      origin: startPos,
+      destination,
+      destinationName,
+      chargingWaypoint: chargingWaypoint || null,
+    });
+
+    setIsRouteLoading(false);
+    if (res.success) {
+      setActiveRoute(res);
+      setRouteError(null);
+    } else {
+      setActiveRoute(null);
+      setRouteError(res.error || "Could not fetch road route.");
+    }
+  };
+
+  const startNavigation = (station: DriverStation) => {
+    startRoadNavigation({
+      destination: [station.latitude, station.longitude],
+      destinationName: station.name,
+      chargingWaypoint: null,
+    });
   };
 
   // Cancel in-app navigation
   const cancelNavigation = () => {
-    if (navIntervalRef.current) clearInterval(navIntervalRef.current);
+    if (watchIdRef.current !== null && typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
     setIsNavigating(false);
-    setNavStation(null);
-    setNavProgress(0);
+    setActiveRoute(null);
+    setRouteError(null);
+    setActiveLegIndex(0);
+    setCurrentStepIndex(0);
+    setDriverHeading(null);
+    setIsOffRoute(false);
   };
+
+  // Real GPS step advancement & off-route detection
+  useEffect(() => {
+    if (!isNavigating || !activeRoute || !driverLocation) return;
+    const currentLeg = activeRoute.legs[activeLegIndex];
+    if (!currentLeg) return;
+
+    // Check off-route & advance maneuver asynchronously to prevent synchronous render cascade
+    const evalRes = evaluateDriverPositionOnRoute(driverLocation, currentLeg.coordinates);
+    const animId = requestAnimationFrame(() => {
+      setIsOffRoute(evalRes.isOffRoute);
+
+      const currentStep = currentLeg.steps[currentStepIndex];
+      if (currentStep) {
+        const dist = calculateDistanceMeters(driverLocation, currentStep.location);
+        if (dist < 35 && currentStepIndex < currentLeg.steps.length - 1) {
+          setCurrentStepIndex((prev) => prev + 1);
+        }
+      }
+    });
+
+    return () => cancelAnimationFrame(animId);
+  }, [driverLocation, isNavigating, activeRoute, activeLegIndex, currentStepIndex]);
 
   // Start Charging Session
   const startChargingSession = (station?: DriverStation) => {
@@ -765,21 +727,19 @@ export default function EVVerseDriverPage() {
 
   return (
     <div
-      className={`min-h-screen w-full flex flex-col items-center selection:bg-[#111312] selection:text-white transition-colors duration-300 ${
-        isFramed
-          ? "bg-[#0C0E0D] text-[#111312]"
-          : "bg-[#FAF9F6] text-[#111312]"
-      }`}
+      className={`min-h-screen w-full flex flex-col items-center selection:bg-[#111312] selection:text-white transition-colors duration-300 ${isFramed
+        ? "bg-[#0C0E0D] text-[#111312]"
+        : "bg-[#FAF9F6] text-[#111312]"
+        }`}
       style={{
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
       }}
     >
       {/* ── Studio Toolbar (visible on desktop) ── */}
-      <div className={`hidden md:flex w-full max-w-5xl items-center justify-between px-6 py-3 border-b text-xs z-50 transition-colors ${
-        isFramed
-          ? "border-[rgba(255,255,255,0.08)] text-[#8C938E]"
-          : "border-black/[0.08] text-[#525854]"
-      }`}>
+      <div className={`hidden md:flex w-full max-w-5xl items-center justify-between px-6 py-3 border-b text-xs z-50 transition-colors ${isFramed
+        ? "border-[rgba(255,255,255,0.08)] text-[#8C938E]"
+        : "border-black/[0.08] text-[#525854]"
+        }`}>
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
           <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
@@ -793,9 +753,8 @@ export default function EVVerseDriverPage() {
 
       {/* ── Outer Mobile Container Shell ── */}
       <div
-        className={`w-full flex-1 flex items-center justify-center ${
-          isFramed ? "py-6 px-4" : "py-0 px-0 max-w-[430px]"
-        }`}
+        className={`w-full flex-1 flex items-center justify-center ${isFramed ? "py-6 px-4" : "py-0 px-0 max-w-[430px]"
+          }`}
       >
         {/* Hardware Frame or Standard Container */}
         <div
@@ -807,11 +766,11 @@ export default function EVVerseDriverPage() {
           style={
             isFramed
               ? {
-                  background:
-                    "linear-gradient(145deg, #383B39 0%, #1D1F1E 30%, #303331 60%, #151716 100%)",
-                  boxShadow:
-                    "0 45px 120px -20px rgba(0,0,0,0.95), 0 25px 60px -15px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 2px rgba(255,255,255,0.25)",
-                }
+                background:
+                  "linear-gradient(145deg, #383B39 0%, #1D1F1E 30%, #303331 60%, #151716 100%)",
+                boxShadow:
+                  "0 45px 120px -20px rgba(0,0,0,0.95), 0 25px 60px -15px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 2px rgba(255,255,255,0.25)",
+              }
               : undefined
           }
         >
@@ -882,9 +841,8 @@ export default function EVVerseDriverPage() {
 
             {/* ── Seamless Display Canvas ── */}
             <div
-              className={`w-full h-full flex flex-col relative bg-[#FAF9F6] overflow-hidden ${
-                isFramed ? "rounded-[42px]" : ""
-              }`}
+              className={`w-full h-full flex flex-col relative bg-[#FAF9F6] overflow-hidden ${isFramed ? "rounded-[42px]" : ""
+                }`}
             >
               {/* iOS Dynamic Island & Status Bar (in frame mode) */}
               {isFramed && (
@@ -896,13 +854,12 @@ export default function EVVerseDriverPage() {
 
                   {/* Hyperrealistic Dynamic Island - EXACT HORIZONTAL CENTER */}
                   <div
-                    className={`absolute left-1/2 -translate-x-1/2 top-1.5 transition-all duration-300 h-7 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md z-20 ${
-                      isCharging
-                        ? "w-48 bg-black text-[#C8F369]"
-                        : isNavigating
+                    className={`absolute left-1/2 -translate-x-1/2 top-1.5 transition-all duration-300 h-7 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md z-20 ${isCharging
+                      ? "w-48 bg-black text-[#C8F369]"
+                      : isNavigating
                         ? "w-44 bg-black text-white"
                         : "w-24 bg-black"
-                    }`}
+                      }`}
                   >
                     {isCharging ? (
                       <>
@@ -917,11 +874,11 @@ export default function EVVerseDriverPage() {
                           <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A] border border-black" />
                         </div>
                       </>
-                    ) : isNavigating && navStation ? (
+                    ) : isNavigating && activeRoute ? (
                       <>
                         <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#C8F369]">
                           <Navigation size={11} />
-                          <span>{Math.round((1 - navProgress) * (navStation.distanceKm || 4.2) * 10) / 10} km</span>
+                          <span>{activeRoute.legs[activeLegIndex]?.distanceKm || activeRoute.totalDistanceKm} km</span>
                         </div>
                         <div className="w-2 h-2 rounded-full bg-[#C8F369] animate-pulse" />
                       </>
@@ -999,9 +956,8 @@ export default function EVVerseDriverPage() {
                     aria-label="Live charging data sources"
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
+                        }`}
                     />
                     <span>Live Data</span>
                   </button>
@@ -1018,529 +974,476 @@ export default function EVVerseDriverPage() {
                 </div>
               </header>
 
-{/* Active Spot Booking Banner */}
-            {activeSpotBooking && (
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setIsPayModalOpen(true)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    setIsPayModalOpen(true);
-                  }
-                }}
-                className="mx-3 sm:mx-4 mt-2.5 p-2.5 sm:p-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-2xl flex items-center justify-between text-xs cursor-pointer shadow-xs animate-in slide-in-from-top-1 hover:bg-[#DCFCE7]/70 transition-colors gap-2"
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A34A]" />
-                  </span>
-                  <div className="truncate">
-                    <span className="font-bold text-[#15803D]">Spot Held: </span>
-                    <span className="text-[#111312] font-semibold">{activeSpotBooking.bayNumber}</span>
-                    <span className="text-[#525854] text-[11px] ml-1">({activeSpotBooking.stationName})</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[10px] font-mono font-bold bg-white text-[#15803D] px-2 py-0.5 rounded-md border border-[#86EFAC]">
-                    PIN: {activeSpotBooking.pinCode}
-                  </span>
-                  <span className="min-h-[30px] px-2.5 py-1 bg-[#15803D] text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs">
-                    View Receipt
-                  </span>
-                </div>
-              </div>
-            )}
+              {/* ── Main Viewport Content ────────────────────────────────────────── */}
+              <main className="flex-1 flex flex-col relative overflow-y-auto no-scrollbar">
 
-            {/* ── Main Viewport Content ────────────────────────────────────────── */}
-            <main className="flex-1 flex flex-col relative overflow-y-auto no-scrollbar">
-              
-              {/* ═════════ TAB 1: HOME (Cockpit) ═════════ */}
-              {activeTab === "home" && (
-                <div className="p-4 flex-1">
-                  <VehicleCockpit
-                    vehicle={activeVehicle}
-                    currentBatteryPct={currentBatteryPct}
-                    calibratedRangeKm={calibratedRangeKm}
-                    driveMode={driveMode}
-                    setDriveMode={setDriveMode}
-                    hvacActive={hvacActive}
-                    setHvacActive={setHvacActive}
-                    doorsLocked={doorsLocked}
-                    setDoorsLocked={setDoorsLocked}
-                    isPreconditioning={isPreconditioning}
-                    setIsPreconditioning={setIsPreconditioning}
-                    nearestUltraStation={nearestUltraStation}
-                    onNavigateToNearest={() => {
-                      if (nearestUltraStation?.raw) {
-                        startNavigation(nearestUltraStation.raw);
-                      }
-                    }}
-                    onOpenGarage={() => setIsVehicleManagerOpen(true)}
-                    onOpenJourneyPlanner={() => setActiveTab("journeys")}
-                    selectedCity={selectedCity}
-                    onCityChange={setSelectedCity}
-                  />
-                </div>
-              )}
-
-              {/* ═════════ TAB 2: EXPLORE (Charging Map) ═════════ */}
-              {activeTab === "explore" && (
-                <div className="flex-1 flex flex-col relative w-full h-full min-h-[500px]">
-                  {/* Interactive Leaflet Map Viewport */}
-                  <div className="flex-1 relative w-full h-full">
-                <DriverMobileMap
-                  center={mapCenter}
-                  zoom={mapZoom}
-                  userLocation={userLocation}
-                  stations={filteredStations}
-                  selectedStation={selectedStation}
-                  onStationSelect={(st) => {
-                    setSelectedStation(st);
-                    setIsStationDetailOpen(true);
-                  }}
-                  navigationStation={navStation}
-                  isNavigating={isNavigating}
-                  navProgress={navProgress}
-                />
-
-                {/* Floating Top Controls (Search & Quick Filters) */}
-                {!isStationDetailOpen && !isNavigating && (
-                  <div className="absolute top-3 left-3 right-3 z-20 space-y-2 pointer-events-auto">
-                  {/* Search Bar */}
-                  <div className="relative w-full">
-                    <Search
-                      size={15}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C938E] pointer-events-none"
-                    />
-                    <input
-                      type="text"
-                      placeholder={`Search charging stations in ${selectedCity}...`}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      aria-label={`Search charging stations in ${selectedCity}`}
-                      className="w-full pl-9 pr-9 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[rgba(17,19,18,0.1)] text-[16px] sm:text-xs font-medium text-[#111312] placeholder-[#8C938E] shadow-sm focus:outline-hidden focus:ring-1 focus:ring-[#111312]"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        aria-label="Clear search text"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#8C938E] hover:text-[#111312] cursor-pointer rounded-full"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Pills */}
-                  <div
-                    role="group"
-                    aria-label="Filter Charging Stations"
-                    className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5"
-                  >
-                    {/* Will I Make It? Direct Route Feasibility Action */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("journeys")}
-                      className="px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center gap-1.5 bg-[#111312] text-[#C8F369] hover:bg-[#252826] shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312]"
-                    >
-                      <Gauge size={13} className="text-[#C8F369]" />
-                      <span>Will I Make It?</span>
-                    </button>
-
-                    {(
-                      [
-                        { id: "all", label: "All Speeds" },
-                        { id: "ultra", label: "Ultra (150kW+)" },
-                        { id: "fast", label: "Fast (50kW+)" },
-                        { id: "ac", label: "Standard AC" },
-                      ] as const
-                    ).map((f) => {
-                      const isActive = speedFilter === f.id;
-                      return (
-                        <button
-                          key={f.id}
-                          onClick={() => setSpeedFilter(f.id)}
-                          aria-pressed={isActive}
-                          className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${
-                            isActive
-                              ? "bg-[#111312] text-white"
-                              : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
-                          }`}
-                        >
-                          {f.label}
-                        </button>
-                      );
-                    })}
-
-                    {/* Connector Match Toggle */}
-                    <button
-                      onClick={() => {
-                        const next = !(onlyCompatible || autoCompatibility);
-                        setOnlyCompatible(next);
-                        if (!next && autoCompatibility) {
-                          handleToggleAutoCompatibility(false);
+                {/* ═════════ TAB 1: HOME (Cockpit) ═════════ */}
+                {activeTab === "home" && (
+                  <div className="p-4 flex-1">
+                    <VehicleCockpit
+                      vehicle={activeVehicle}
+                      currentBatteryPct={currentBatteryPct}
+                      calibratedRangeKm={calibratedRangeKm}
+                      driveMode={driveMode}
+                      setDriveMode={setDriveMode}
+                      hvacActive={hvacActive}
+                      setHvacActive={setHvacActive}
+                      doorsLocked={doorsLocked}
+                      setDoorsLocked={setDoorsLocked}
+                      isPreconditioning={isPreconditioning}
+                      setIsPreconditioning={setIsPreconditioning}
+                      nearestUltraStation={nearestUltraStation}
+                      onNavigateToNearest={() => {
+                        if (nearestUltraStation?.raw) {
+                          startNavigation(nearestUltraStation.raw);
                         }
                       }}
-                      aria-pressed={onlyCompatible || autoCompatibility}
-                      className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${
-                        onlyCompatible || autoCompatibility
-                          ? "bg-[#111312] text-[#C8F369]"
-                          : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
-                      }`}
-                    >
-                      Compatible ({activeVehicle.plugType.split(" ")[0]})
-                    </button>
-
-                    {/* Saved Bookmarks Filter */}
-                    {savedStationIds.size > 0 && (
-                      <button
-                        onClick={() => setOnlySaved(!onlySaved)}
-                        aria-pressed={onlySaved}
-                        className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#EF4444] ${
-                          onlySaved
-                            ? "bg-[#EF4444] text-white"
-                            : "bg-white/95 backdrop-blur-md text-[#EF4444] border border-[#FCA5A5]"
-                        }`}
-                      >
-                        Saved ({savedStationIds.size})
-                      </button>
-                    )}
-                  </div>
-                </div>
-                )}
-
-                {/* In-app Navigation HUD Banner */}
-                {isNavigating && navStation && (
-                  <div className="absolute top-3 left-3 right-3 z-30 bg-[#111312] text-white rounded-2xl p-3.5 shadow-xl flex items-center justify-between border border-[rgba(255,255,255,0.1)]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[rgba(200,243,105,0.2)] flex items-center justify-center text-[#C8F369]">
-                        <Navigation size={16} />
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#C8F369] font-bold">
-                          NAVIGATING ({Math.round((1 - navProgress) * (navStation.distanceKm || 4.2) * 10) / 10} km)
-                        </div>
-                        <div className="text-xs font-bold text-white truncate max-w-[180px]">
-                          {navStation.name}
-                        </div>
-                        <div className="text-[10px] text-[#9CA3AF]">
-                          Arrival Battery: ~{Math.max(10, currentBatteryPct - Math.round(((navStation.distanceKm || 4) / activeVehicle.wltpRangeKm) * 100))}%
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={cancelNavigation}
-                      aria-label="Exit navigation mode"
-                      className="min-h-[36px] px-3.5 py-1.5 text-[11px] font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-white"
-                    >
-                      Exit
-                    </button>
+                      onOpenGarage={() => setIsVehicleManagerOpen(true)}
+                      onOpenJourneyPlanner={() => setActiveTab("journeys")}
+                      selectedCity={selectedCity}
+                      onCityChange={setSelectedCity}
+                    />
                   </div>
                 )}
 
-                {/* Empty State Overlay when 0 stations found */}
-                {filteredStations.length === 0 && !loading && (
-                  <div className="absolute inset-x-3 bottom-20 z-20">
-                    <EmptyState onReset={handleResetFilters} />
-                  </div>
-                )}
-
-                {/* Bottom Quick Hubs Drawer / Peek Card */}
-                {!isStationDetailOpen && !isNavigating && filteredStations.length > 0 && (
-                  <div className="absolute bottom-16 left-3 right-3 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C938E] font-semibold">
-                        {filteredStations.length} Charging Stations
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsLiveDataSheetOpen(true)}
-                        className={`text-[10px] font-semibold font-mono flex items-center gap-1 px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
-                          isLive
-                            ? "text-[#16A34A] bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70"
-                            : "text-[#D97706] bg-amber-50 border-amber-200 hover:bg-amber-100/70"
-                        }`}
-                        title="Click to view data source details"
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
-                          }`}
-                          aria-hidden="true"
-                        />
-                        <span>{isLive ? "Live OCM" : "Static Baseline"}</span>
-                      </button>
-                    </div>
-
-                    {/* First Station Preview Card */}
-                    {filteredStations[0] && (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`View details for ${filteredStations[0].name}`}
-                        onClick={() => {
-                          setSelectedStation(filteredStations[0]);
+                {/* ═════════ TAB 2: EXPLORE (Charging Map) ═════════ */}
+                {activeTab === "explore" && (
+                  <div className="flex-1 flex flex-col relative w-full h-full min-h-[500px]">
+                    {/* Interactive Leaflet Map Viewport */}
+                    <div className="flex-1 relative w-full h-full">
+                      <DriverMobileMap
+                        center={mapCenter}
+                        zoom={mapZoom}
+                        userLocation={userLocation}
+                        stations={filteredStations}
+                        selectedStation={selectedStation}
+                        onStationSelect={(st) => {
+                          setSelectedStation(st);
                           setIsStationDetailOpen(true);
                         }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            setSelectedStation(filteredStations[0]);
-                            setIsStationDetailOpen(true);
+                        activeRoute={activeRoute}
+                        activeLegIndex={activeLegIndex}
+                        driverLocation={driverLocation}
+                        driverHeading={driverHeading}
+                        isNavigating={isNavigating}
+                        routeError={routeError}
+                        onRetryRoute={() => {
+                          if (activeRoute) {
+                            startRoadNavigation({
+                              destination: activeRoute.destinationCoords,
+                              destinationName: activeRoute.destinationName,
+                              chargingWaypoint: activeRoute.chargingWaypointCoords
+                                ? {
+                                  name: activeRoute.chargingWaypointName || "Charging Stop",
+                                  latitude: activeRoute.chargingWaypointCoords[0],
+                                  longitude: activeRoute.chargingWaypointCoords[1],
+                                }
+                                : null,
+                            });
                           }
                         }}
-                        className="flex items-center justify-between cursor-pointer group rounded-xl p-1 -m-1 focus-visible:outline-2 focus-visible:outline-[#111312]"
-                      >
-                        <div className="pr-3 truncate">
-                          <div className="text-xs font-bold text-[#111312] group-hover:text-[#16A34A] transition-colors truncate">
-                            {filteredStations[0].name}
+                      />
+
+                      {/* Floating Top Controls (Search & Quick Filters) */}
+                      {!isStationDetailOpen && !isNavigating && (
+                        <div className="absolute top-3 left-3 right-3 z-20 space-y-2 pointer-events-auto">
+                          {/* Search Bar */}
+                          <div className="relative w-full">
+                            <Search
+                              size={15}
+                              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C938E] pointer-events-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder={`Search charging stations in ${selectedCity}...`}
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              aria-label={`Search charging stations in ${selectedCity}`}
+                              className="w-full pl-9 pr-9 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[rgba(17,19,18,0.1)] text-[16px] sm:text-xs font-medium text-[#111312] placeholder-[#8C938E] shadow-sm focus:outline-hidden focus:ring-1 focus:ring-[#111312]"
+                            />
+                            {searchQuery && (
+                              <button
+                                onClick={() => setSearchQuery("")}
+                                aria-label="Clear search text"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#8C938E] hover:text-[#111312] cursor-pointer rounded-full"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
                           </div>
-                          <div className="text-[10.5px] text-[#525854] font-mono mt-0.5">
-                            {filteredStations[0].distanceKm ? `${filteredStations[0].distanceKm.toFixed(1)} km` : "Nearby"} • {filteredStations[0].power_kw || 120} kW DC • {filteredStations[0].bays} Bays
+
+                          {/* Filter Pills */}
+                          <div
+                            role="group"
+                            aria-label="Filter Charging Stations"
+                            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5"
+                          >
+                            {/* Will I Make It? Direct Route Feasibility Action */}
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab("journeys")}
+                              className="px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center gap-1.5 bg-[#111312] text-[#C8F369] hover:bg-[#252826] shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312]"
+                            >
+                              <Gauge size={13} className="text-[#C8F369]" />
+                              <span>Will I Make It?</span>
+                            </button>
+
+                            {(
+                              [
+                                { id: "all", label: "All Speeds" },
+                                { id: "ultra", label: "Ultra (150kW+)" },
+                                { id: "fast", label: "Fast (50kW+)" },
+                                { id: "ac", label: "Standard AC" },
+                              ] as const
+                            ).map((f) => {
+                              const isActive = speedFilter === f.id;
+                              return (
+                                <button
+                                  key={f.id}
+                                  onClick={() => setSpeedFilter(f.id)}
+                                  aria-pressed={isActive}
+                                  className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${isActive
+                                    ? "bg-[#111312] text-white"
+                                    : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
+                                    }`}
+                                >
+                                  {f.label}
+                                </button>
+                              );
+                            })}
+
+                            {/* Connector Match Toggle */}
+                            <button
+                              onClick={() => {
+                                const next = !(onlyCompatible || autoCompatibility);
+                                setOnlyCompatible(next);
+                                if (!next && autoCompatibility) {
+                                  handleToggleAutoCompatibility(false);
+                                }
+                              }}
+                              aria-pressed={onlyCompatible || autoCompatibility}
+                              className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${onlyCompatible || autoCompatibility
+                                ? "bg-[#111312] text-[#C8F369]"
+                                : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
+                                }`}
+                            >
+                              Compatible ({activeVehicle.plugType.split(" ")[0]})
+                            </button>
+
+                            {/* Saved Bookmarks Filter */}
+                            {savedStationIds.size > 0 && (
+                              <button
+                                onClick={() => setOnlySaved(!onlySaved)}
+                                aria-pressed={onlySaved}
+                                className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#EF4444] ${onlySaved
+                                  ? "bg-[#EF4444] text-white"
+                                  : "bg-white/95 backdrop-blur-md text-[#EF4444] border border-[#FCA5A5]"
+                                  }`}
+                              >
+                                Saved ({savedStationIds.size})
+                              </button>
+                            )}
                           </div>
                         </div>
+                      )}
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedStation(filteredStations[0]);
-                              setIsStationDetailOpen(true);
-                            }}
-                            className="min-h-[40px] px-3 py-2 bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-[#DCFCE7] active:scale-95 cursor-pointer"
-                          >
-                            <Zap size={12} className="text-[#16A34A]" />
-                            <span>Book Stall</span>
-                          </button>
+                      {/* Genuine Road Turn-by-Turn Navigation HUD */}
+                      {isNavigating && activeRoute && (
+                        <NavigationHUD
+                          route={activeRoute}
+                          activeLegIndex={activeLegIndex}
+                          currentStepIndex={currentStepIndex}
+                          driverLocation={driverLocation}
+                          driverHeading={driverHeading}
+                          gpsStatus={gpsStatus}
+                          isOffRoute={isOffRoute}
+                          activeVehicleSoc={currentBatteryPct}
+                          onAdvanceToLeg={(nextLeg) => {
+                            if (nextLeg < activeRoute.legs.length) {
+                              setActiveLegIndex(nextLeg);
+                              setCurrentStepIndex(0);
+                            }
+                          }}
+                          onExitNavigation={cancelNavigation}
+                        />
+                      )}
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startNavigation(filteredStations[0]);
-                            }}
-                            aria-label={`Start navigation to ${filteredStations[0].name}`}
-                            className="min-h-[40px] px-3.5 py-2 bg-[#111312] text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs hover:bg-[#252826] active:scale-95 shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
-                          >
-                            <Navigation size={12} className="text-[#C8F369]" aria-hidden="true" />
-                            Route
-                          </button>
+                      {/* Empty State Overlay when 0 stations found */}
+                      {filteredStations.length === 0 && !loading && (
+                        <div className="absolute inset-x-3 bottom-20 z-20">
+                          <EmptyState onReset={handleResetFilters} />
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {/* Bottom Quick Hubs Drawer / Peek Card */}
+                      {!isStationDetailOpen && !isNavigating && filteredStations.length > 0 && (
+                        <div className="absolute bottom-16 left-3 right-3 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C938E] font-semibold">
+                              {filteredStations.length} Charging Stations
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setIsLiveDataSheetOpen(true)}
+                              className={`text-[10px] font-semibold font-mono flex items-center gap-1 px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${isLive
+                                ? "text-[#16A34A] bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70"
+                                : "text-[#D97706] bg-amber-50 border-amber-200 hover:bg-amber-100/70"
+                                }`}
+                              title="Click to view data source details"
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-[#16A34A] animate-pulse" : "bg-[#D97706]"
+                                  }`}
+                                aria-hidden="true"
+                              />
+                              <span>{isLive ? "Live OCM" : "Static Baseline"}</span>
+                            </button>
+                          </div>
+
+                          {/* First Station Preview Card */}
+                          {filteredStations[0] && (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`View details for ${filteredStations[0].name}`}
+                              onClick={() => {
+                                setSelectedStation(filteredStations[0]);
+                                setIsStationDetailOpen(true);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  setSelectedStation(filteredStations[0]);
+                                  setIsStationDetailOpen(true);
+                                }
+                              }}
+                              className="flex items-center justify-between cursor-pointer group rounded-xl p-1 -m-1 focus-visible:outline-2 focus-visible:outline-[#111312]"
+                            >
+                              <div className="pr-3 truncate">
+                                <div className="text-xs font-bold text-[#111312] group-hover:text-[#16A34A] transition-colors truncate">
+                                  {filteredStations[0].name}
+                                </div>
+                                <div className="text-[10.5px] text-[#525854] font-mono mt-0.5">
+                                  {filteredStations[0].distanceKm ? `${filteredStations[0].distanceKm.toFixed(1)} km` : "Nearby"} • {filteredStations[0].power_kw || 120} kW DC • {filteredStations[0].bays} Bays
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedStation(filteredStations[0]);
+                                    setIsStationDetailOpen(true);
+                                  }}
+                                  className="min-h-[40px] px-3 py-2 bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-[#DCFCE7] active:scale-95 cursor-pointer"
+                                >
+                                  <Zap size={12} className="text-[#16A34A]" />
+                                  <span>Book Stall</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startNavigation(filteredStations[0]);
+                                  }}
+                                  aria-label={`Start navigation to ${filteredStations[0].name}`}
+                                  className="min-h-[40px] px-3.5 py-2 bg-[#111312] text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs hover:bg-[#252826] active:scale-95 shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+                                >
+                                  <Navigation size={12} className="text-[#C8F369]" aria-hidden="true" />
+                                  Route
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Complete Station Detail Sheet Experience */}
+                      <StationDetailSheet
+                        station={selectedStation}
+                        userLocation={userLocation}
+                        isOpen={isStationDetailOpen && !!selectedStation}
+                        onClose={() => setIsStationDetailOpen(false)}
+                        onStartNavigation={(st: LiveStation) => startNavigation(st as DriverStation)}
+                        onStartCharging={(st) => startChargingSession(st as DriverStation)}
+                        isSaved={selectedStation ? savedStationIds.has(selectedStation.station_id) : false}
+                        onToggleSave={(id) => toggleSaveStation(id)}
+                        activeVehicleSoc={currentBatteryPct}
+                        vehicleWltpKm={activeVehicle.wltpRangeKm}
+                        activeVehicle={activeVehicle}
+                      />
+                    </div>
                   </div>
                 )}
 
-                {/* Complete Station Detail Sheet Experience */}
-                <StationDetailSheet
-                  station={selectedStation}
-                  userLocation={userLocation}
-                  isOpen={isStationDetailOpen && !!selectedStation}
-                  onClose={() => setIsStationDetailOpen(false)}
-                  onStartNavigation={(st: any) => startNavigation(st as DriverStation)}
-                  onStartCharging={(st) => startChargingSession(st as DriverStation)}
-                  isSaved={selectedStation ? savedStationIds.has(selectedStation.station_id) : false}
-                  onToggleSave={(id) => toggleSaveStation(id)}
-                  activeVehicleSoc={currentBatteryPct}
-                  vehicleWltpKm={activeVehicle.wltpRangeKm}
-                  activeVehicle={activeVehicle}
-                  onOpenBookingModal={() => setIsPayModalOpen(true)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ═════════ TAB 3: JOURNEYS (Corridor Planner) ═════════ */}
-          {activeTab === "journeys" && (
-            <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between w-full h-full max-w-lg mx-auto">
-              <JourneyPlanner
-                activeVehicle={activeVehicle}
-                currentBatteryPct={currentBatteryPct}
-                candidateStations={journeyCandidateStations}
-                userLocation={userLocation}
-                selectedCity={selectedCity}
-                onStartTripNavigation={({ name, latitude, longitude, primaryStation }) => {
-                  const targetStation: DriverStation = primaryStation
-                    ? {
-                        ...primaryStation,
-                        distanceKm: haversineKm(userLocation[0], userLocation[1], primaryStation.latitude, primaryStation.longitude),
-                      }
-                    : {
-                        station_id: `CORRIDOR-${name.replace(/\s+/g, "-")}`,
-                        name,
-                        latitude,
-                        longitude,
-                        address: `${name} Transit Corridor, ${selectedCity}`,
-                        operator: "EVverse Fast Charging",
-                        status: "Operational",
-                        is_operational: true,
-                        power_kw: 250,
-                        bays: 8,
-                        connector_types: [activeVehicle.plugType, "CCS2 Combo", "Type 2"],
-                        usage_cost: "$0.28/kWh",
-                        source: "open_charge_map",
-                        distanceKm: haversineKm(userLocation[0], userLocation[1], latitude, longitude),
-                      };
-                  startNavigation(targetStation);
-                }}
-              />
-            </div>
-          )}
-
-          {/* ═════════ TAB 4: CHARGING (Session Console) ═════════ */}
-          {activeTab === "charging" && (
-            <div className="p-4 flex-1">
-              <ChargingConsole
-                isCharging={isCharging}
-                vehicle={activeVehicle}
-                currentBatteryPct={currentBatteryPct}
-                chargeStation={chargeStation}
-                targetLimit={chargeTargetLimit}
-                setTargetLimit={setChargeTargetLimit}
-                elapsedSeconds={chargeElapsedSeconds}
-                kwhDelivered={chargeKwhDelivered}
-                currentKw={chargeCurrentKw}
-                chargeCost={chargeCost}
-                onStartCharge={() => startChargingSession()}
-                onStopCharge={stopChargingSession}
-                showReceiptModal={showReceiptModal}
-                onCloseReceiptModal={() => setShowReceiptModal(false)}
-              />
-            </div>
-          )}
-
-          {/* ═════════ TAB 5: PROFILE (Account & Preferences) ═════════ */}
-          {activeTab === "profile" && (
-            <div className="p-4 flex-1 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
-                <div>
-                  <h2 className="text-base font-bold text-[#111312]">Driver Profile</h2>
-                  <p className="text-[11px] text-[#525854]">Account settings &amp; fleet preferences</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs">
-                  EV
-                </div>
-              </div>
-
-              {/* Active Vehicle Card */}
-              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold">
-                    Active Vehicle
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsVehicleManagerOpen(true)}
-                    className="text-xs font-semibold text-[#111312] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Manage Fleet ({vehicles.length})</span>
-                    <ChevronRight size={13} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="relative w-16 h-12 rounded-xl bg-[#FAF9F6] p-1 shrink-0 flex items-center justify-center border border-black/[0.05]">
-                    <Image
-                      src={activeVehicle.image}
-                      alt={activeVehicle.model}
-                      fill
-                      className="object-contain p-0.5"
+                {/* ═════════ TAB 3: JOURNEYS (Corridor Planner) ═════════ */}
+                {activeTab === "journeys" && (
+                  <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between w-full h-full max-w-lg mx-auto">
+                    <JourneyPlanner
+                      activeVehicle={activeVehicle}
+                      currentBatteryPct={currentBatteryPct}
+                      candidateStations={journeyCandidateStations}
+                      userLocation={userLocation}
+                      selectedCity={selectedCity}
+                      onStartTripNavigation={({ name, latitude, longitude, primaryStation }) => {
+                        startRoadNavigation({
+                          destination: [latitude, longitude],
+                          destinationName: name,
+                          chargingWaypoint: primaryStation
+                            ? {
+                              name: primaryStation.name,
+                              latitude: primaryStation.latitude,
+                              longitude: primaryStation.longitude,
+                            }
+                            : null,
+                        });
+                      }}
                     />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold text-[#111312] truncate">
-                      {activeVehicle.make} {activeVehicle.model}
-                    </h3>
-                    <div className="text-[11px] font-mono text-[#525854] mt-0.5">
-                      {activeVehicle.year} • {activeVehicle.plugType} • {activeVehicle.currentBatteryPct}% SoC
-                    </div>
-                  </div>
-                </div>
-              </div>
+                )}
 
-              {/* Preferences: City & Auto-compatibility */}
-              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3.5">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
-                  Regional &amp; Filtering Preferences
-                </span>
-
-                <div className="flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-semibold text-[#111312]">Home Region</div>
-                    <div className="text-[10.5px] text-[#525854]">Default charging grid region</div>
-                  </div>
-                  <select
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    className="bg-[#FAF9F6] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-2.5 py-1.5 cursor-pointer"
-                  >
-                    {Object.keys(CITY_CONFIGS).map((city) => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="pt-2 border-t border-black/[0.05] flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-semibold text-[#111312]">Auto-Filter Plug Standards</div>
-                    <div className="text-[10.5px] text-[#525854]">Only show {activeVehicle.plugType} compatible plugs</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !autoCompatibility;
-                      setAutoCompatibility(next);
-                      setOnlyCompatible(next);
-                      saveStoredAutoCompatibility(next);
-                      syncAutoCompatibility(next);
-                    }}
-                    className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer ${
-                      autoCompatibility ? "bg-[#111312]" : "bg-[#D1D5DB]"
-                    }`}
-                  >
-                    <span
-                      className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
-                        autoCompatibility ? "right-1" : "left-1"
-                      }`}
+                {/* ═════════ TAB 4: CHARGING (Session Console) ═════════ */}
+                {activeTab === "charging" && (
+                  <div className="p-4 flex-1">
+                    <ChargingConsole
+                      isCharging={isCharging}
+                      vehicle={activeVehicle}
+                      currentBatteryPct={currentBatteryPct}
+                      chargeStation={chargeStation}
+                      targetLimit={chargeTargetLimit}
+                      setTargetLimit={setChargeTargetLimit}
+                      elapsedSeconds={chargeElapsedSeconds}
+                      kwhDelivered={chargeKwhDelivered}
+                      currentKw={chargeCurrentKw}
+                      chargeCost={chargeCost}
+                      onStartCharge={() => startChargingSession()}
+                      onStopCharge={stopChargingSession}
+                      showReceiptModal={showReceiptModal}
+                      onCloseReceiptModal={() => setShowReceiptModal(false)}
                     />
-                  </button>
-                </div>
-              </div>
-
-              {/* Web3 / Monad Wallet */}
-              <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-2.5">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
-                  Web3 Fast-Pass Wallet
-                </span>
-                <div className="flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-semibold text-[#111312]">Monad Testnet</div>
-                    <div className="text-[10.5px] font-mono text-[#525854]">
-                      {driverWalletAddress ? truncateAddress(driverWalletAddress) : "No wallet connected"}
-                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleDriverConnectWallet}
-                    disabled={isDriverConnectingWallet}
-                    className="px-3 py-1.5 bg-[#FAF9F6] hover:bg-[#EAE8E2] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
-                  >
-                    {driverWalletAddress ? "Connected" : isDriverConnectingWallet ? "Connecting..." : "Connect"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* ═════════ TAB 6: GARAGE (Redirected to Dedicated Manager) ═════════ */}
-          {activeTab === "garage" && (
-            <div className="p-4 flex-1">
+                {/* ═════════ TAB 5: PROFILE (Account & Preferences) ═════════ */}
+                {activeTab === "profile" && (
+                  <div className="p-4 flex-1 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
+                      <div>
+                        <h2 className="text-base font-bold text-[#111312]">Driver Profile</h2>
+                        <p className="text-[11px] text-[#525854]">Account settings &amp; fleet preferences</p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs">
+                        EV
+                      </div>
+                    </div>
+
+                    {/* Active Vehicle Card */}
+                    <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold">
+                          Active Vehicle
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsVehicleManagerOpen(true)}
+                          className="text-xs font-semibold text-[#111312] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Manage Fleet ({vehicles.length})</span>
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-16 h-12 rounded-xl bg-[#FAF9F6] p-1 shrink-0 flex items-center justify-center border border-black/[0.05]">
+                          <Image
+                            src={activeVehicle.image}
+                            alt={activeVehicle.model}
+                            fill
+                            className="object-contain p-0.5"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-bold text-[#111312] truncate">
+                            {activeVehicle.make} {activeVehicle.model}
+                          </h3>
+                          <div className="text-[11px] font-mono text-[#525854] mt-0.5">
+                            {activeVehicle.year} • {activeVehicle.plugType} • {activeVehicle.currentBatteryPct}% SoC
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preferences: City & Auto-compatibility */}
+                    <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
+                        Regional &amp; Filtering Preferences
+                      </span>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-semibold text-[#111312]">Home Region</div>
+                          <div className="text-[10.5px] text-[#525854]">Default charging grid region</div>
+                        </div>
+                        <select
+                          value={selectedCity}
+                          onChange={(e) => setSelectedCity(e.target.value)}
+                          className="bg-[#FAF9F6] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-2.5 py-1.5 cursor-pointer"
+                        >
+                          {Object.keys(CITY_CONFIGS).map((city) => (
+                            <option key={city} value={city}>{city}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="pt-2 border-t border-black/[0.05] flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-semibold text-[#111312]">Auto-Filter Plug Standards</div>
+                          <div className="text-[10.5px] text-[#525854]">Only show {activeVehicle.plugType} compatible plugs</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !autoCompatibility;
+                            setAutoCompatibility(next);
+                            setOnlyCompatible(next);
+                            saveStoredAutoCompatibility(next);
+                            syncAutoCompatibility(next);
+                          }}
+                          className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer ${autoCompatibility ? "bg-[#111312]" : "bg-[#D1D5DB]"
+                            }`}
+                        >
+                          <span
+                            className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${autoCompatibility ? "right-1" : "left-1"
+                              }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+                {/* ═════════ TAB 6: GARAGE (Redirected to Dedicated Manager) ═════════ */}
+                {activeTab === "garage" && (
+                  <div className="p-4 flex-1">
+                    <VehicleManager
+                      isOpen={true}
+                      onClose={() => setActiveTab("home")}
+                      vehicles={vehicles}
+                      activeVehicleId={activeVehicleId}
+                      onSelectVehicle={handleSelectVehicle}
+                      onAddVehicle={handleAddVehicle}
+                      onUpdateVehicle={handleUpdateVehicle}
+                      onRemoveVehicle={handleRemoveVehicle}
+                    />
+                  </div>
+                )}
+              </main>
+
+              {/* ── Dedicated Full-Screen Vehicle Management Experience ───────── */}
               <VehicleManager
-                isOpen={true}
-                onClose={() => setActiveTab("home")}
+                isOpen={isVehicleManagerOpen}
+                onClose={() => setIsVehicleManagerOpen(false)}
                 vehicles={vehicles}
                 activeVehicleId={activeVehicleId}
                 onSelectVehicle={handleSelectVehicle}
@@ -1548,66 +1451,41 @@ export default function EVVerseDriverPage() {
                 onUpdateVehicle={handleUpdateVehicle}
                 onRemoveVehicle={handleRemoveVehicle}
               />
+
+              {/* ── Left-side Navigation Drawer (Replaces Bottom Bar) ─────────── */}
+              <DriverDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                activeTab={activeTab}
+                onSelectTab={(tab) => {
+                  if (tab === "garage") {
+                    setIsVehicleManagerOpen(true);
+                  } else {
+                    setActiveTab(tab);
+                  }
+                }}
+                activeVehicle={activeVehicle}
+                onOpenGarage={() => setIsVehicleManagerOpen(true)}
+              />
+
+              {/* ── Transparent Multi-Source Live Data Panel ───────────────────── */}
+              <LiveDataSourceSheet
+                isOpen={isLiveDataSheetOpen}
+                onClose={() => setIsLiveDataSheetOpen(false)}
+                selectedCity={selectedCity}
+                isLive={isLive}
+                source={source}
+                stationCount={stationCount}
+                lastUpdatedTime={lastUpdatedTime}
+                loading={loading}
+                fallbackReason={fallbackReason}
+                sources={sources}
+                onRefresh={refetch}
+              />
             </div>
-          )}
-        </main>
-
-        {/* ── Dedicated Full-Screen Vehicle Management Experience ───────── */}
-        <VehicleManager
-          isOpen={isVehicleManagerOpen}
-          onClose={() => setIsVehicleManagerOpen(false)}
-          vehicles={vehicles}
-          activeVehicleId={activeVehicleId}
-          onSelectVehicle={handleSelectVehicle}
-          onAddVehicle={handleAddVehicle}
-          onUpdateVehicle={handleUpdateVehicle}
-          onRemoveVehicle={handleRemoveVehicle}
-        />
-
-        {/* ── Left-side Navigation Drawer (Replaces Bottom Bar) ─────────── */}
-        <DriverDrawer
-          isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-          activeTab={activeTab}
-          onSelectTab={(tab) => {
-            if (tab === "garage") {
-              setIsVehicleManagerOpen(true);
-            } else {
-              setActiveTab(tab);
-            }
-          }}
-          activeVehicle={activeVehicle}
-          onOpenGarage={() => setIsVehicleManagerOpen(true)}
-        />
-
-        {/* ── Global Monad Payment & Stall Hold Modal ────────────────────── */}
-        <ParkingBookingModal
-          isOpen={isPayModalOpen}
-          onClose={() => setIsPayModalOpen(false)}
-          station={paymentTargetStation}
-          onStartNavigation={(st: any) => startNavigation(st as DriverStation)}
-          activeVehicle={activeVehicle}
-          initialStep="review"
-        />
-
-        {/* ── Transparent Multi-Source Live Data Panel ───────────────────── */}
-        <LiveDataSourceSheet
-          isOpen={isLiveDataSheetOpen}
-          onClose={() => setIsLiveDataSheetOpen(false)}
-          selectedCity={selectedCity}
-          isLive={isLive}
-          source={source}
-          stationCount={stationCount}
-          lastUpdatedTime={lastUpdatedTime}
-          loading={loading}
-          fallbackReason={fallbackReason}
-          sources={sources}
-          onRefresh={refetch}
-        />
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
