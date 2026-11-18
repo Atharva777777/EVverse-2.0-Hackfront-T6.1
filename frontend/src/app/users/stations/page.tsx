@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -76,6 +76,7 @@ import {
   Wallet,
   Gauge,
   Menu,
+  AlertTriangle,
 } from "lucide-react";
 
 // Dynamic Leaflet Map Component
@@ -175,11 +176,20 @@ export default function EVVerseDriverPage() {
     }
   }, []);
 
-  // User Location (centered relative to selected city)
-  const [userLocation, setUserLocation] = useState<[number, number]>([
-    cityConfig.lat + 0.008,
-    cityConfig.lng - 0.006,
-  ]);
+  // Location Management: Explicitly separate real device GPS from catalog filtering city center
+  const [deviceLocation, setDeviceLocation] = useState<[number, number] | null>(null);
+  const [deviceAccuracy, setDeviceAccuracy] = useState<number | null>(null);
+  const [locationStatus, setLocationStatus] = useState<
+    "prompt" | "detecting" | "precise" | "approximate" | "denied" | "unavailable" | "timeout" | "unsupported"
+  >("prompt");
+
+  // Fallback location strictly derived from currently selected city
+  const fallbackLocation = useMemo<[number, number]>(() => {
+    return [cityConfig.lat, cityConfig.lng];
+  }, [cityConfig.lat, cityConfig.lng]);
+
+  // User location defaults to genuine device GPS when acquired, falling back to city center
+  const userLocation: [number, number] = deviceLocation || fallbackLocation;
 
   // Live stations from backend API
   const {
@@ -223,6 +233,7 @@ export default function EVVerseDriverPage() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const watchIdRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
 
   // Charging Session State
   const [isCharging, setIsCharging] = useState(false);
@@ -262,28 +273,115 @@ export default function EVVerseDriverPage() {
     syncFavouritesWithBackend().then(setSavedStationIds);
   }, []);
 
-  // User geolocation detection with graceful denial handling
-  useEffect(() => {
-    if (typeof window !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setUserLocation(coords);
-        },
-        (err) => {
-          console.info("[EV Verse] Geolocation not granted; using regional baseline coordinates:", err.code);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
-      );
+  // High-accuracy device GPS acquisition with automatic fallback tier
+  const requestDeviceLocation = useCallback((forceHighAccuracy = true) => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setLocationStatus("unsupported");
+      return;
     }
+
+    setLocationStatus("detecting");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (!isMountedRef.current) return;
+        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setDeviceLocation(coords);
+        setDeviceAccuracy(pos.coords.accuracy);
+        const isPrecise = pos.coords.accuracy <= 100;
+        setLocationStatus(isPrecise ? "precise" : "approximate");
+        setMapCenter(coords);
+      },
+      (err) => {
+        if (!isMountedRef.current) return;
+        console.warn("[EVverse GPS] High-accuracy geolocation notice:", err.message, "code:", err.code);
+        if (err.code === 1) {
+          // GeolocationPositionError.PERMISSION_DENIED
+          setLocationStatus("denied");
+        } else {
+          // POSITION_UNAVAILABLE or TIMEOUT: Attempt second tier fallback with lower constraints
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (!isMountedRef.current) return;
+              const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+              setDeviceLocation(coords);
+              setDeviceAccuracy(pos.coords.accuracy);
+              setLocationStatus("approximate");
+              setMapCenter(coords);
+            },
+            (fallbackErr) => {
+              if (!isMountedRef.current) return;
+              console.warn("[EVverse GPS] Fallback geolocation notice:", fallbackErr.message);
+              if (fallbackErr.code === 3) {
+                setLocationStatus("timeout");
+              } else {
+                setLocationStatus("unavailable");
+              }
+            },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 }
+          );
+        }
+      },
+      {
+        enableHighAccuracy: forceHighAccuracy,
+        timeout: 12000,
+        maximumAge: 10000,
+      }
+    );
   }, []);
+
+  // Initialize and track browser geolocation permissions
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      requestAnimationFrame(() => setLocationStatus("unsupported"));
+      return;
+    }
+
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        navigator.permissions
+          .query({ name: "geolocation" as PermissionName })
+          .then((permissionStatus) => {
+            if (!isMountedRef.current) return;
+            if (permissionStatus.state === "granted") {
+              requestDeviceLocation(true);
+            } else if (permissionStatus.state === "denied") {
+              setLocationStatus("denied");
+            } else {
+              // "prompt"
+              requestDeviceLocation(true);
+            }
+
+            permissionStatus.onchange = () => {
+              if (!isMountedRef.current) return;
+              if (permissionStatus.state === "granted") {
+                requestDeviceLocation(true);
+              } else if (permissionStatus.state === "denied") {
+                setLocationStatus("denied");
+                setDeviceLocation(null);
+                setDeviceAccuracy(null);
+              }
+            };
+          })
+          .catch(() => {
+            if (isMountedRef.current) {
+              requestAnimationFrame(() => requestDeviceLocation(true));
+            }
+          });
+      } catch {
+        requestAnimationFrame(() => requestDeviceLocation(true));
+      }
+    } else {
+      requestAnimationFrame(() => requestDeviceLocation(true));
+    }
+  }, [requestDeviceLocation]);
 
   // Center map on city change (render-phase state adjustment)
   const [prevCity, setPrevCity] = useState(selectedCity);
   if (selectedCity !== prevCity) {
     setPrevCity(selectedCity);
     setMapCenter([cityConfig.lat, cityConfig.lng]);
-    setUserLocation([cityConfig.lat + 0.008, cityConfig.lng - 0.006]);
+    // NOTE: deviceLocation is preserved! Never overwrite genuine device coordinates.
   }
 
   // Update battery percentage when vehicle changes
@@ -555,6 +653,7 @@ export default function EVVerseDriverPage() {
     destination,
     destinationName,
     chargingWaypoint,
+    originCoords,
   }: {
     destination: [number, number];
     destinationName: string;
@@ -563,6 +662,7 @@ export default function EVVerseDriverPage() {
       latitude: number;
       longitude: number;
     } | null;
+    originCoords?: [number, number];
   }) => {
     setIsNavigating(true);
     setIsRouteLoading(true);
@@ -572,7 +672,37 @@ export default function EVVerseDriverPage() {
     setActiveTab("explore");
     setIsStationDetailOpen(false);
 
-    const startPos = driverLocation || userLocation;
+    let startPos: [number, number] | null = driverLocation || originCoords || deviceLocation;
+
+    // If no real position is available yet, await a one-shot high-accuracy position acquisition
+    if (!startPos) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (typeof window === "undefined" || !navigator.geolocation) {
+            reject(new Error("Geolocation not supported by device"));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000,
+          });
+        });
+        startPos = [pos.coords.latitude, pos.coords.longitude];
+        setDeviceLocation(startPos);
+        setDeviceAccuracy(pos.coords.accuracy);
+        setDriverLocation(startPos);
+        setLocationStatus(pos.coords.accuracy <= 100 ? "precise" : "approximate");
+      } catch (err: unknown) {
+        console.warn("[EVverse Navigation] Could not acquire device GPS before route calculation:", err);
+        setIsRouteLoading(false);
+        setIsNavigating(false);
+        setRouteError(
+          "Device GPS location is required to calculate and begin turn-by-turn navigation. Please grant location permissions."
+        );
+        return;
+      }
+    }
 
     // Start watchPosition for real GPS device tracking
     if (typeof window !== "undefined" && navigator.geolocation) {
@@ -581,14 +711,18 @@ export default function EVVerseDriverPage() {
       }
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
+          if (!isMountedRef.current || watchIdRef.current === null) return;
           const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
           setDriverLocation(coords);
+          setDeviceLocation(coords);
+          setDeviceAccuracy(pos.coords.accuracy);
           setGpsStatus("active");
           if (typeof pos.coords.heading === "number" && !isNaN(pos.coords.heading)) {
             setDriverHeading(pos.coords.heading);
           }
         },
         (err) => {
+          if (!isMountedRef.current || watchIdRef.current === null) return;
           console.warn("[EVverse GPS] Location tracking notice:", err.message);
           setGpsStatus(err.code === 1 ? "denied" : "unavailable");
         },
@@ -596,7 +730,7 @@ export default function EVVerseDriverPage() {
       );
     }
 
-    // Fetch real road route
+    // Fetch real road route starting from genuine device location
     const res = await fetchRoadRoute({
       origin: startPos,
       destination,
@@ -636,6 +770,18 @@ export default function EVVerseDriverPage() {
     setDriverHeading(null);
     setIsOffRoute(false);
   };
+
+  // Clean up GPS watcher and track component lifecycle on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (watchIdRef.current !== null && typeof window !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, []);
 
   // Real GPS step advancement & off-route detection
   useEffect(() => {
@@ -1020,6 +1166,10 @@ export default function EVVerseDriverPage() {
                         center={mapCenter}
                         zoom={mapZoom}
                         userLocation={userLocation}
+                        deviceLocation={deviceLocation}
+                        deviceAccuracy={deviceAccuracy}
+                        locationStatus={locationStatus}
+                        onAcquireLocation={() => requestDeviceLocation(true)}
                         stations={filteredStations}
                         selectedStation={selectedStation}
                         onStationSelect={(st) => {
@@ -1149,6 +1299,44 @@ export default function EVVerseDriverPage() {
                               </button>
                             )}
                           </div>
+
+                          {/* Location Status Feedback Banner */}
+                          {locationStatus === "detecting" && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-xl border border-black/[0.08] text-[11px] font-medium text-[#525854] shadow-xs">
+                              <div className="w-3 h-3 border-2 border-[#16A34A] border-t-transparent rounded-full animate-spin shrink-0" />
+                              <span>Detecting device location...</span>
+                            </div>
+                          )}
+                          {locationStatus === "denied" && (
+                            <div className="flex items-center justify-between px-3 py-1.5 bg-[#FFFBEB] rounded-xl border border-[#FDE68A] text-[11px] text-[#92400E] shadow-xs">
+                              <div className="flex items-center gap-1.5">
+                                <AlertTriangle size={13} className="text-[#D97706] shrink-0" />
+                                <span>Location access denied. Showing {selectedCity} center.</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => requestDeviceLocation(true)}
+                                className="font-semibold underline ml-2 cursor-pointer hover:text-[#78350F]"
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          )}
+                          {(locationStatus === "unavailable" || locationStatus === "timeout") && (
+                            <div className="flex items-center justify-between px-3 py-1.5 bg-[#FFFBEB] rounded-xl border border-[#FDE68A] text-[11px] text-[#92400E] shadow-xs">
+                              <div className="flex items-center gap-1.5">
+                                <AlertTriangle size={13} className="text-[#D97706] shrink-0" />
+                                <span>GPS signal unavailable. Showing {selectedCity} center.</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => requestDeviceLocation(true)}
+                                className="font-semibold underline ml-2 cursor-pointer hover:text-[#78350F]"
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1290,8 +1478,12 @@ export default function EVVerseDriverPage() {
                       currentBatteryPct={currentBatteryPct}
                       candidateStations={journeyCandidateStations}
                       userLocation={userLocation}
+                      deviceLocation={deviceLocation}
+                      deviceAccuracy={deviceAccuracy}
+                      locationStatus={locationStatus}
+                      onAcquireLocation={() => requestDeviceLocation(true)}
                       selectedCity={selectedCity}
-                      onStartTripNavigation={({ name, latitude, longitude, primaryStation }) => {
+                      onStartTripNavigation={({ name, latitude, longitude, primaryStation, originCoords }) => {
                         startRoadNavigation({
                           destination: [latitude, longitude],
                           destinationName: name,
@@ -1302,6 +1494,7 @@ export default function EVVerseDriverPage() {
                               longitude: primaryStation.longitude,
                             }
                             : null,
+                          originCoords,
                         });
                       }}
                     />

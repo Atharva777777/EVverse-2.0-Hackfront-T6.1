@@ -10,6 +10,10 @@ interface DriverMobileMapProps {
   center: [number, number];
   zoom?: number;
   userLocation: [number, number];
+  deviceLocation?: [number, number] | null;
+  deviceAccuracy?: number | null;
+  locationStatus?: string;
+  onAcquireLocation?: () => void;
   stations: LiveStation[];
   selectedStation: LiveStation | null;
   onStationSelect: (station: LiveStation) => void;
@@ -27,6 +31,10 @@ export default function DriverMobileMap({
   center,
   zoom = 13,
   userLocation,
+  deviceLocation,
+  deviceAccuracy,
+  locationStatus,
+  onAcquireLocation,
   stations,
   selectedStation,
   onStationSelect,
@@ -43,7 +51,7 @@ export default function DriverMobileMap({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
 
-  const currentPos = driverLocation || userLocation;
+  const activeDevicePos = driverLocation || deviceLocation;
 
   // ── Initialize Leaflet Map with CartoDB Voyager Legal Open Tiles ───────────
   useEffect(() => {
@@ -112,24 +120,26 @@ export default function DriverMobileMap({
     import("leaflet").then(({ default: L }) => {
       markersLayer.clearLayers();
 
-      // 1. Driver / User Location Marker (with heading direction if available)
-      const hasHeading = typeof driverHeading === "number" && !isNaN(driverHeading);
-      const headingRotation = hasHeading ? `transform: rotate(${driverHeading}deg);` : "";
+      // 1. Driver / User Location Marker (rendered only when genuine GPS position is acquired)
+      if (activeDevicePos) {
+        const hasHeading = typeof driverHeading === "number" && !isNaN(driverHeading);
+        const headingRotation = hasHeading ? `transform: rotate(${driverHeading}deg);` : "";
 
-      const userHtml = `
-        <div style="position:relative;width:30px;height:30px;transform:translate(-15px,-15px);">
-          <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(200,243,105,0.35);animation:pulse-1 2s infinite;"></div>
-          <div style="position:absolute;inset:0;border-radius:50%;background:#111312;border:3px solid #C8F369;box-shadow:0 3px 12px rgba(17,19,18,0.4);display:flex;align-items:center;justify-content:center;${headingRotation}">
-            ${
-              hasHeading
-                ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>`
-                : `<div style="width:8px;height:8px;border-radius:50%;background:#C8F369;"></div>`
-            }
+        const userHtml = `
+          <div style="position:relative;width:30px;height:30px;transform:translate(-15px,-15px);">
+            <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(200,243,105,0.35);animation:pulse-1 2s infinite;"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:#111312;border:3px solid #C8F369;box-shadow:0 3px 12px rgba(17,19,18,0.4);display:flex;align-items:center;justify-content:center;${headingRotation}">
+              ${
+                hasHeading
+                  ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>`
+                  : `<div style="width:8px;height:8px;border-radius:50%;background:#C8F369;"></div>`
+              }
+            </div>
           </div>
-        </div>
-      `;
-      const userIcon = L.divIcon({ html: userHtml, className: "", iconSize: [0, 0] });
-      L.marker(currentPos, { icon: userIcon, zIndexOffset: 1200 }).addTo(markersLayer);
+        `;
+        const userIcon = L.divIcon({ html: userHtml, className: "", iconSize: [0, 0] });
+        L.marker(activeDevicePos, { icon: userIcon, zIndexOffset: 1200 }).addTo(markersLayer);
+      }
 
       // 2. Station Markers (Rendered when browsing or selecting)
       stations.forEach((st) => {
@@ -202,8 +212,8 @@ export default function DriverMobileMap({
     stations,
     selectedStation?.station_id,
     activeRoute?.chargingWaypointCoords,
-    currentPos[0],
-    currentPos[1],
+    activeDevicePos ? activeDevicePos[0] : null,
+    activeDevicePos ? activeDevicePos[1] : null,
     driverHeading,
   ]);
 
@@ -327,8 +337,15 @@ export default function DriverMobileMap({
         <button
           type="button"
           onClick={() => {
-            if (mapInstanceRef.current) {
-              mapInstanceRef.current.setView(currentPos, 14, {
+            if (activeDevicePos && mapInstanceRef.current) {
+              mapInstanceRef.current.setView(activeDevicePos, 15, {
+                animate: true,
+                duration: 0.6,
+              });
+            } else if (onAcquireLocation) {
+              onAcquireLocation();
+            } else if (mapInstanceRef.current) {
+              mapInstanceRef.current.setView(center, zoom, {
                 animate: true,
                 duration: 0.6,
               });
@@ -337,7 +354,7 @@ export default function DriverMobileMap({
           aria-label="Center map on my location"
           className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white/95 backdrop-blur-md rounded-xl border border-[rgba(17,19,18,0.12)] shadow-md flex items-center justify-center text-[#111312] hover:bg-[#F3F2ED] active:scale-95 transition-all cursor-pointer"
         >
-          <Crosshair size={18} />
+          <Crosshair size={18} className={activeDevicePos ? "text-[#111312]" : "text-[#767D78]"} />
         </button>
         <div className="flex flex-col rounded-xl overflow-hidden border border-[rgba(17,19,18,0.12)] shadow-md bg-white/95 backdrop-blur-md">
           <button

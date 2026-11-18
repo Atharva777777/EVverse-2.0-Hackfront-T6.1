@@ -36,12 +36,17 @@ interface JourneyPlannerProps {
   currentBatteryPct: number;
   candidateStations: LiveStation[];
   userLocation: [number, number];
+  deviceLocation?: [number, number] | null;
+  deviceAccuracy?: number | null;
+  locationStatus?: string;
+  onAcquireLocation?: () => void;
   selectedCity?: string;
   onStartTripNavigation: (dest: {
     name: string;
     latitude: number;
     longitude: number;
     primaryStation?: LiveStation;
+    originCoords?: [number, number];
   }) => void;
 }
 
@@ -50,6 +55,10 @@ export function JourneyPlanner({
   currentBatteryPct,
   candidateStations,
   userLocation,
+  deviceLocation,
+  deviceAccuracy,
+  locationStatus,
+  onAcquireLocation,
   selectedCity = "Mumbai",
   onStartTripNavigation,
 }: JourneyPlannerProps) {
@@ -79,6 +88,15 @@ export function JourneyPlanner({
   // Selected stop (primary or backup)
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
 
+  // Origin resolution state (distinguishes real device GPS from approximate city center)
+  const [useCityCenterFallback, setUseCityCenterFallback] = useState<boolean>(false);
+
+  const effectiveOrigin: [number, number] | null = useMemo(() => {
+    if (deviceLocation) return deviceLocation;
+    if (useCityCenterFallback) return userLocation;
+    return null;
+  }, [deviceLocation, useCityCenterFallback, userLocation]);
+
   // API State
   const [isComputing, setIsComputing] = useState<boolean>(true);
   const [planResponse, setPlanResponse] = useState<WillIMakeItResponse | null>(null);
@@ -99,6 +117,14 @@ export function JourneyPlanner({
     setValidationError(null);
 
     // Client-side validation: ensure physical validity
+    if (!effectiveOrigin) {
+      setIsComputing(false);
+      setValidationError("Device location is required to calculate journey feasibility. Detect GPS or choose approximate city center.");
+      return () => {
+        isCancelled = true;
+      };
+    }
+
     if (isNaN(startBatteryPct) || startBatteryPct < 0 || startBatteryPct > 100) {
       setValidationError("Departure battery percentage must be between 0% and 100%.");
       setIsComputing(false);
@@ -144,7 +170,7 @@ export function JourneyPlanner({
       ambient_temp_c: 28,
       hvac_mode: hvacMode,
       driving_style: drivingStyle,
-      origin_coords: userLocation,
+      origin_coords: effectiveOrigin,
       destination_coords: [selectedDestination.lat, selectedDestination.lng],
       city: selectedCity,
       candidate_stations: (candidateStations || []).slice(0, 35).map((st) => ({
@@ -197,7 +223,7 @@ export function JourneyPlanner({
     payloadKg,
     hvacMode,
     drivingStyle,
-    userLocation,
+    effectiveOrigin,
     selectedCity,
     candidateStations,
   ]);
@@ -357,6 +383,86 @@ export function JourneyPlanner({
 
       {/* ── Scrollable Body Section ── */}
       <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pb-2">
+        {/* ── DEPARTURE ORIGIN CARD ── */}
+        <div className="bg-white rounded-2xl p-3 border border-black/[0.08] shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-[#525854]">
+              <Navigation size={13} className={deviceLocation ? "text-[#16A34A]" : "text-[#D97706]"} />
+              <span className="font-semibold text-[#111312]">Departure Origin</span>
+            </div>
+            {deviceLocation ? (
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                locationStatus === "precise"
+                  ? "bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]"
+                  : "bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]"
+              }`}>
+                {locationStatus === "precise"
+                  ? `Precise location${deviceAccuracy ? ` · ±${Math.round(deviceAccuracy)}m` : ""}`
+                  : `Approx. location${deviceAccuracy ? ` · ±${Math.round(deviceAccuracy)}m` : ""}`}
+              </span>
+            ) : useCityCenterFallback ? (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]">
+                Approx. City Center
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]">
+                Location Needed
+              </span>
+            )}
+          </div>
+
+          {deviceLocation ? (
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <div className="text-[11px] font-mono text-[#525854]">
+                {deviceLocation[0].toFixed(4)}° N, {deviceLocation[1].toFixed(4)}° E
+                <span className="text-[#8C938E] ml-1.5">({selectedCity})</span>
+              </div>
+              {onAcquireLocation && (
+                <button
+                  type="button"
+                  onClick={onAcquireLocation}
+                  className="text-[10.5px] font-medium text-[#15803D] hover:underline cursor-pointer flex items-center gap-1"
+                  title="Re-detect location"
+                >
+                  <RefreshCw size={10} />
+                  <span>{locationStatus === "precise" ? "Refresh GPS" : "Refresh Location"}</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="pt-0.5 space-y-2">
+              <p className="text-[11px] text-[#767D78]">
+                Real device location is required to calculate accurate road distance and determine reachable chargers.
+              </p>
+              <div className="flex items-center gap-2">
+                {onAcquireLocation && (
+                  <button
+                    type="button"
+                    onClick={onAcquireLocation}
+                    className="px-3 py-1.5 bg-[#111312] text-[#C8F369] rounded-xl text-[11px] font-bold hover:bg-[#252826] cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Navigation size={12} />
+                    <span>Detect My Location</span>
+                  </button>
+                )}
+                {!useCityCenterFallback ? (
+                  <button
+                    type="button"
+                    onClick={() => setUseCityCenterFallback(true)}
+                    className="px-3 py-1.5 bg-white border border-black/[0.1] rounded-xl text-[11px] font-medium text-[#525854] hover:bg-[#FAF9F6] cursor-pointer"
+                  >
+                    Use {selectedCity} Center (Approximate)
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-mono text-[#767D78]">
+                    Using [{userLocation[0].toFixed(3)}, {userLocation[1].toFixed(3)}]
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* ── 2. COMPACT DEPARTURE BATTERY CONTROL ── */}
         <div className="bg-white rounded-2xl p-3 border border-black/[0.08] shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs">
@@ -815,23 +921,31 @@ export function JourneyPlanner({
       <div className="sticky bottom-0 z-20 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent pt-2.5 pb-safe pb-2 shrink-0">
         <button
           type="button"
+          disabled={!effectiveOrigin}
           onClick={() =>
             onStartTripNavigation({
               name: selectedDestination.name,
               latitude: selectedDestination.lat,
               longitude: selectedDestination.lng,
               primaryStation: isChargingNeeded ? navStation : undefined,
+              originCoords: effectiveOrigin || undefined,
             })
           }
-          className="w-full min-h-[48px] py-3.5 px-4 bg-[#111312] text-white text-xs sm:text-sm font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-[#252826] active:scale-[0.99] transition-all shadow-md cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+          className={`w-full min-h-[48px] py-3.5 px-4 text-xs sm:text-sm font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md focus-visible:outline-2 focus-visible:outline-[#111312] ${
+            !effectiveOrigin
+              ? "bg-[#E2E5DF] text-[#8C938E] cursor-not-allowed"
+              : "bg-[#111312] text-white hover:bg-[#252826] active:scale-[0.99] cursor-pointer"
+          }`}
         >
-          <Navigation size={16} className="text-[#C8F369]" />
+          <Navigation size={16} className={effectiveOrigin ? "text-[#C8F369]" : "text-[#8C938E]"} />
           <span>
-            {isChargingNeeded && effectivePrimaryStop
+            {!effectiveOrigin
+              ? "GPS Location Required to Start"
+              : isChargingNeeded && effectivePrimaryStop
               ? `Navigate to Charging Stop (${effectivePrimaryStop.name.split(" ")[0]})`
               : `Start Journey to ${selectedDestination.name}`}
           </span>
-          <ArrowRight size={16} className="text-[#C8F369]" />
+          <ArrowRight size={16} className={effectiveOrigin ? "text-[#C8F369]" : "text-[#8C938E]"} />
         </button>
       </div>
     </div>
