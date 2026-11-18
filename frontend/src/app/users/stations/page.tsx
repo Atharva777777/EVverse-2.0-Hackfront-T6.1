@@ -16,6 +16,7 @@ import { VehicleCockpit, EVVehicle } from "@/components/driver/VehicleCockpit";
 import { JourneyPlanner } from "@/components/driver/JourneyPlanner";
 import { ChargingConsole } from "@/components/driver/ChargingConsole";
 import { VehicleManager } from "@/components/driver/VehicleManager";
+import { DriverProfile } from "@/components/driver/DriverProfile";
 import {
   LoadingSkeleton,
   EmptyState,
@@ -1327,100 +1328,22 @@ export default function EVVerseDriverPage() {
 
                 {/* ═════════ TAB 5: PROFILE (Account & Preferences) ═════════ */}
                 {activeTab === "profile" && (
-                  <div className="p-4 flex-1 space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-black/[0.06]">
-                      <div>
-                        <h2 className="text-base font-bold text-[#111312]">Driver Profile</h2>
-                        <p className="text-[11px] text-[#525854]">Account settings &amp; fleet preferences</p>
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs">
-                        EV
-                      </div>
-                    </div>
-
-                    {/* Active Vehicle Card */}
-                    <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold">
-                          Active Vehicle
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsVehicleManagerOpen(true)}
-                          className="text-xs font-semibold text-[#111312] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>Manage Fleet ({vehicles.length})</span>
-                          <ChevronRight size={13} />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-16 h-12 rounded-xl bg-[#FAF9F6] p-1 shrink-0 flex items-center justify-center border border-black/[0.05]">
-                          <Image
-                            src={activeVehicle.image}
-                            alt={activeVehicle.model}
-                            fill
-                            className="object-contain p-0.5"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-bold text-[#111312] truncate">
-                            {activeVehicle.make} {activeVehicle.model}
-                          </h3>
-                          <div className="text-[11px] font-mono text-[#525854] mt-0.5">
-                            {activeVehicle.year} • {activeVehicle.plugType} • {activeVehicle.currentBatteryPct}% SoC
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Preferences: City & Auto-compatibility */}
-                    <div className="p-4 bg-white rounded-2xl border border-black/[0.06] shadow-2xs space-y-3.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#767D78] font-bold block">
-                        Regional &amp; Filtering Preferences
-                      </span>
-
-                      <div className="flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-semibold text-[#111312]">Home Region</div>
-                          <div className="text-[10.5px] text-[#525854]">Default charging grid region</div>
-                        </div>
-                        <select
-                          value={selectedCity}
-                          onChange={(e) => setSelectedCity(e.target.value)}
-                          className="bg-[#FAF9F6] border border-black/[0.08] text-[#111312] text-xs font-semibold rounded-xl px-2.5 py-1.5 cursor-pointer"
-                        >
-                          {Object.keys(CITY_CONFIGS).map((city) => (
-                            <option key={city} value={city}>{city}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="pt-2 border-t border-black/[0.05] flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-semibold text-[#111312]">Auto-Filter Plug Standards</div>
-                          <div className="text-[10.5px] text-[#525854]">Only show {activeVehicle.plugType} compatible plugs</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const next = !autoCompatibility;
-                            setAutoCompatibility(next);
-                            setOnlyCompatible(next);
-                            saveStoredAutoCompatibility(next);
-                            syncAutoCompatibility(next);
-                          }}
-                          className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer ${autoCompatibility ? "bg-[#111312]" : "bg-[#D1D5DB]"
-                            }`}
-                        >
-                          <span
-                            className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${autoCompatibility ? "right-1" : "left-1"
-                              }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
+                  <DriverProfile
+                    activeVehicle={activeVehicle}
+                    vehicles={vehicles}
+                    currentBatteryPct={currentBatteryPct}
+                    selectedCity={selectedCity}
+                    onCityChange={setSelectedCity}
+                    autoCompatibility={autoCompatibility}
+                    onToggleAutoCompatibility={(next) => {
+                      setAutoCompatibility(next);
+                      setOnlyCompatible(next);
+                      saveStoredAutoCompatibility(next);
+                      syncAutoCompatibility(next);
+                    }}
+                    savedStationIds={savedStationIds}
+                    onOpenVehicleManager={() => setIsVehicleManagerOpen(true)}
+                  />
                 )}
 
                 {/* ═════════ TAB 6: GARAGE (Redirected to Dedicated Manager) ═════════ */}
