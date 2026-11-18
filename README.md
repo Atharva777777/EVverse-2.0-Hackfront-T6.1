@@ -1,101 +1,154 @@
-# EVverse 2.0 — "Will I Make It?" (HackFront India T6.1)
+# EVverse 2.0 — EV Driver Companion
 
-**EVverse 2.0** is a standalone electric vehicle journey-planning system engineered for **HackFront India Task 6.1 ("Will I Make It?")**. It calculates deterministic energy consumption, models scenario uncertainty, renders clear feasibility verdicts (SAFE, CAUTION, CHARGING_NEEDED), and recommends reachable, connector-compatible en-route charging stops.
+**EVverse 2.0** is a physics-informed electric vehicle companion app built for Indian drivers. It combines real-time charging station discovery, road-based navigation, and a deterministic range physics engine to answer the driver's core question: *"Will I make it?"*
 
----
-
-## Key Features
-
-1. **Longitudinal Range Physics Engine (`backend/api/services/range_physics.py`):**
-   - Elevation grade climbing power and regenerative braking recovery (60% recovery efficiency).
-   - Passenger/cargo payload delta mass scaling over nominal test weight (75 kg).
-   - Auxiliary HVAC cabin thermal power scaling with ambient temperature (omitted for open 2W/3W vehicles).
-   - Aerodynamic drag & rolling resistance with Eco, Normal, and Sport dynamics.
-   - Physical parameter uncertainty bounds (nominal, worst-case, best-case arrival SoC %).
-
-2. **Feasibility & Risk Verdict Engine (`backend/api/services/journey_risk.py`):**
-   - Rigorous evaluation against driver's customizable Reserve Safety Buffer (default 15%).
-   - Exact battery depletion distance (km) calculation.
-   - Minimum recommended departure SoC % calculation.
-   - Actionable mitigation advice (speed reduction, eco drive mode).
-
-3. **Reachable En-Route Charging Stop Recommendations (`backend/api/services/charging_stop.py`):**
-   - Verified physical reachability: validates remaining battery can reach the station.
-   - Strict physical connector standard matching (CCS2 Combo, Type 2 AC, CHAdeMO, GB/T).
-   - Realistic charging duration modeling with constant-voltage taper above 80% SoC and onboard vehicle hardware caps.
-   - Route detour penalty minimization and transparent qualification explanations.
-
-4. **Tactile Driver Journey Cockpit (`frontend/`):**
-   - Next.js 16 / Tailwind CSS v4 cockpit with real-time reactive sliders.
-   - Regional transit corridors: Mumbai ➔ Pune Expressway (118 km, +580m), Lonavala Ghats (84 km, +620m), Navi Mumbai (34 km, +40m), Thane Bypass (28 km, +35m).
-   - Interactive Leaflet route map showing origin, destination, corridor polyline, and charging stops.
-   - Primary and backup charging stop recommendation cards.
+Built for **HackFront India Grand Finale** · Track 6.1.
 
 ---
 
-## Quickstart Guide
+## What It Does
 
-### Option A: One-Click Launch (Windows)
-Double-click `run_demo.bat` in the project root or inside `prototype/run_demo.bat`.
-This automatically starts both the FastAPI backend and Next.js frontend in separate terminal windows.
+An EV driver can:
+- **Manage their vehicle** — Select from a verified Indian EV fleet, track SoC, choose drive mode.
+- **Discover nearby charging stations** — Multi-source live data from OCM, BEE, and OSM with connector compatibility filtering.
+- **Plan a journey** — Physics-based feasibility verdict (SAFE / CAUTION / CHARGING REQUIRED) with real OSRM road distance, arrival battery estimate, and conditional charging stop recommendations.
+- **Navigate on real roads** — OSRM-powered turn-by-turn navigation with live GPS tracking, route geometry on OSM tiles, and multi-leg charging waypoint support.
+- **Manage a charging session** — Live telemetry display, target SoC control, and session cost tracking in ₹.
+- **View their driver profile** — Vehicle info, regional preferences, and auto plug-compatibility settings.
 
-### Option B: Manual Launch
+---
 
-#### 1. Backend (FastAPI on Port 8000)
-Run from the project root (`C:\Dev\Projects\EV-VERSE\EV2.0`):
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend** | Python 3.12, FastAPI, Uvicorn, Pydantic v2, HTTPX, Pandas |
+| **Frontend** | Next.js 16 (App Router, webpack), React 19, TypeScript 5, Tailwind CSS v4, Leaflet 1.9 |
+| **Routing** | OSRM (public demo server — `router.project-osrm.org`) |
+| **Map Tiles** | OpenStreetMap (`tile.openstreetmap.org`) — keyless, no watermark |
+| **Station Data** | Open Charge Map (OCM) API, BEE National EV registry, OpenStreetMap Overpass |
+| **Local Storage** | Zero-ORM SQLite (`data/driver.db`) |
+
+---
+
+## Quickstart
+
+### Prerequisites
+- Python 3.12+
+- Node.js 20+
+- `npm`
+
+### 1. Backend (FastAPI — Port 8000)
+
+Run from the **project root** (`C:\Dev\Projects\EV-VERSE\EV2.0`):
+
 ```bash
-# Create virtual environment (if not already created)
+# Create and activate virtual environment
 python -m venv .venv
-# Activate virtual environment
-.venv\Scripts\activate
-# Install minimal dependencies (8 packages)
-pip install -r requirements.txt
-# Start FastAPI backend
-uvicorn backend.api.main:app --reload --port 8000
-```
-- API Health Check: http://127.0.0.1:8000/api/v1/health
-- Interactive Swagger Docs: http://127.0.0.1:8000/docs
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS/Linux
 
-#### 2. Frontend (Next.js 16 on Port 3000)
+# Install dependencies
+pip install -r requirements.txt
+
+# Start backend
+uvicorn backend.api.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+- Health check: http://127.0.0.1:8000/api/v1/health
+- Swagger docs: http://127.0.0.1:8000/docs
+
+### 2. Frontend (Next.js — Port 3000)
+
 ```bash
 cd frontend
-# Install dependencies
 npm install
-# Start Next.js development server
-npm run dev
+
+# Start dev server (use --webpack to avoid Turbopack build issues)
+npm run dev -- --turbo=false
 ```
+
 Open **http://localhost:3000** in your browser.
+
+> **Note:** Use `npm run dev` with webpack (default). The Turbopack bundler has a known panic on `globals.css` during production builds — this is non-blocking for development. TypeScript (`npx tsc --noEmit`) is the authority for type safety checks.
 
 ---
 
-## Automated Verification & Test Commands
+## Running Tests
 
-### Run Backend Pytest Suite
+### Backend Tests
+
 ```bash
-.venv\Scripts\python -m pytest backend/tests
-```
-**Result:** 59 passed in 3.84s (100% pass rate).
+# Activate venv first
+.venv\Scripts\activate
 
-### Run Frontend TypeScript Compilation
+# Run offline unit tests only (async API tests make external HTTP calls and will hang without network)
+.venv\Scripts\python -m pytest backend/tests -k "not api_endpoint" -v
+```
+
+**Expected results:**
+- `test_range_physics.py` — 25 passed
+- `test_journey_risk.py` — 12 passed
+- `test_charging_stop.py` — 15 passed
+- `test_multi_source_integration.py` (offline unit tests) — 3 passed
+
+> Tests named `test_live_stations_api_endpoint` and `test_trip_api.py` make real external HTTP calls to OCM/BEE APIs. Run them only with active internet access.
+
+### Frontend Type Check
+
 ```bash
 cd frontend
 npx tsc --noEmit
 ```
-**Result:** 0 errors.
+
+**Expected:** 0 errors.
 
 ---
 
-## Prototype Screenshots
+## Project Structure
 
-Verified screenshots from browser test runs are preserved in `prototype/screenshots/`:
-- `journey_planner_interface_1792421542812.png`: Porsche Taycan GTS, Mumbai ➔ Pune Expressway (118 km), 68% battery -> **SAFE TO PROCEED** (30.3% arrival SoC).
-- `charging_needed_recommendation_1792421661757.png`: Starting battery reduced to 31% -> **CHARGING REQUIRED** (Depletion at km 97), Bandra Kurla Complex (BKC) Hub 150 kW CCS2 charger recommended.
+```
+EV2.0/
+├── backend/
+│   ├── api/
+│   │   ├── main.py                  # FastAPI app, CORS, routers
+│   │   ├── routers/                 # trip, stations, driver, monad endpoints
+│   │   └── services/
+│   │       ├── range_physics.py     # Longitudinal EV energy model
+│   │       ├── journey_risk.py      # Feasibility verdict engine
+│   │       ├── charging_stop.py     # Reachable charging stop recommender
+│   │       └── multi_source_stations.py  # OCM + BEE + OSM integration
+│   └── tests/
+├── frontend/
+│   └── src/
+│       ├── app/users/stations/page.tsx   # Main driver app (single-page, 5 tabs)
+│       ├── components/
+│       │   ├── driver/
+│       │   │   ├── VehicleCockpit.tsx    # Home tab: vehicle, range, cockpit
+│       │   │   ├── JourneyPlanner.tsx    # Journey tab: feasibility planner
+│       │   │   ├── ChargingConsole.tsx   # Charging tab: session management
+│       │   │   ├── NavigationHUD.tsx     # Turn-by-turn navigation overlay
+│       │   │   ├── StationDetailSheet.tsx # Station info bottom sheet
+│       │   │   └── VehicleManager.tsx    # Fleet management modal
+│       │   └── DriverMobileMap.tsx       # Leaflet map with OSM tiles
+│       ├── lib/
+│       │   ├── routeService.ts      # OSRM road routing client
+│       │   ├── driverApi.ts         # Backend API client
+│       │   ├── vehicleStorage.ts    # Vehicle persistence + sync
+│       │   └── stationAdapter.ts    # Station enrichment + reporting
+│       └── hooks/
+│           └── useLiveData.ts       # Live station data hook
+├── data/
+│   └── driver.db                    # SQLite: driver sessions, vehicles, favourites
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## Architecture & Technology Stack
+## Architecture Notes
 
-- **Backend:** Python 3.12, FastAPI 0.148, Uvicorn, Pydantic v2, HTTPX, Pandas.
-- **Frontend:** Next.js 16.3 (App Router, webpack), React 19.2, TypeScript 5, Tailwind CSS v4, Leaflet 1.9, Lucide React.
-- **Data:** Zero-ORM SQLite (`data/driver.db`), Open Charge Map API, verified candidate zone fallback registries.
-- **Decoupling Integrity:** 100% decoupled from legacy quantum optimization, 3D WebGL assets, and blockchain simulations.
+- **Single-page app**: All 5 driver tabs (`home`, `explore`, `journeys`, `charging`, `profile`) render in `/users/stations/page.tsx`. State is managed locally with React hooks and persisted via backend API and `localStorage`.
+- **GPS Privacy**: Device coordinates are only used in-memory (passed to OSRM for routing and backend for physics). No coordinates are stored in SQLite, localStorage, or transmitted to any third-party analytics service.
+- **Route Geometry**: Road routes use real OSRM geometry. Map tiles are standard OSM — keyless, no API key required.
+- **Station Data**: The backend merges OCM, BEE, and OSM station sources with spatial deduplication. Falls back to local `candidate_zones.csv` when external APIs are unavailable.

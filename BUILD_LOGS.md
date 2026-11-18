@@ -90,3 +90,86 @@
   - TypeScript compilation completed with 0 errors (`npx tsc --noEmit`).
   - Both servers running locally: FastAPI on port 8000, Next.js on port 3000.
   - Live browser verification: tested SAFE scenario (Porsche Taycan GTS, 68% battery, arrival SoC ~30.3%) and CHARGING_NEEDED scenario (31% battery, depletion at ~97 km, BKC Hub 150 kW CCS2 charger recommended).
+
+---
+
+## Cohort Entry 7: Journey Planner Redesign (Workstream 1)
+**Date:** November 2026 *(Grand Finale Sprint)*
+
+- **Objective:** Redesign the Journey Planner from a data-heavy engineering layout to a driver-centric experience focused on decision-making.
+- **Implementation:**
+  - Arrival battery percentage made the most visually prominent result.
+  - SAFE verdict hides unnecessary charging recommendations.
+  - CAUTION verdict shows risk clearly with guidance only when useful.
+  - CHARGING REQUIRED verdict shows genuine primary and backup charging stop recommendation cards with connector badges, detour time, and charging duration.
+  - Navigation button label adapts: "Start Journey" (SAFE/CAUTION) vs "Navigate to Charging Stop" (CHARGING REQUIRED).
+  - Collapsible driving conditions section and technical breakdown.
+  - Departure-to-arrival battery comparison rendered as a visual flow.
+  - Original destination preserved during charging-stop navigation routing.
+  - `roadMetrics` state added: OSRM road distance is passed to backend physics engine instead of corridor corridor estimate.
+- **Files changed:** `frontend/src/components/driver/JourneyPlanner.tsx`
+- **Commit:** `4294a0f` — `feat(driver): redesign Journey Planner with driver-centric hierarchy and conditional charging`
+
+---
+
+## Cohort Entry 8: Real Road-Based Navigation (Workstream 2)
+**Date:** November 2026 *(Grand Finale Sprint)*
+
+- **Objective:** Replace the artificial navigation route with actual OSRM road-based routing, real GPS tracking, and genuine turn-by-turn instructions.
+- **New files:**
+  - `frontend/src/lib/routeService.ts`: OSRM routing client with typed `OSRMStep` / `OSRMLeg` interfaces, multi-leg builder (origin → charging stop → destination), maneuver step formatter, off-route detector (>50m threshold).
+  - `frontend/src/components/driver/NavigationHUD.tsx`: Floating turn-by-turn navigation overlay. Displays current maneuver icon, instruction text, distance to next step, estimated arrival time, leg progress, GPS status indicator, and cancel button.
+- **Modified files:**
+  - `frontend/src/components/DriverMobileMap.tsx`: Replaced Leaflet polyline with OSRM-sourced road geometry coordinates. Swapped CartoDB tiles (which required an API key and showed a watermark) for keyless OpenStreetMap tiles (`tile.openstreetmap.org`). Added charging waypoint pin and destination flag marker.
+  - `frontend/src/app/users/stations/page.tsx`: Added `startRoadNavigation`, `cancelNavigation`, `watchPosition` GPS state machine (`gpsStatus`: `prompt → active → denied`), `activeRoute`, `activeLegIndex`, `currentStepIndex`, `driverLocation`, `driverHeading`, `isOffRoute`, `routeError`, `isRouteLoading`.
+  - `frontend/src/components/driver/JourneyPlanner.tsx`: Passes OSRM `roadMetrics` road distance to backend physics API.
+- **Route verification:**
+  - Pune → Lonavala: 63.2 km, 52 min, 1,156 coordinates
+  - Pune → Mumbai: 132.4 km, 107 min, 2,524 coordinates
+  - Multi-leg with charging waypoint: 2 distinct legs returned
+- **TypeScript:** `npx tsc --noEmit` exits 0.
+- **Status:** Implemented, uncommitted. To be committed as part of WS3 cleanup milestone.
+
+---
+
+## Cohort Entry 9: Basemap Fix and TypeScript Hardening
+**Date:** November 2026 *(Grand Finale Sprint)*
+
+- **Issue:** CartoDB Voyager tile layer displayed "API KEY REQUIRED" watermark on the map.
+- **Fix:** Replaced CartoDB tile URL with `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. OSM attribution rendered. No API key required.
+- **TypeScript issues resolved:**
+  - `fetchRoadRoute` missing `destinationName` parameter — made optional in `FetchRouteParams`, added `|| "Destination"` fallback.
+  - Explicit `any` type in `OSRMStep` and `OSRMLeg` — replaced with typed interfaces.
+  - `string | undefined` assigned to `string` — added nullish fallbacks throughout `routeService.ts`.
+  - Unused `driverHeading` and `isLastLeg` warnings in `NavigationHUD.tsx` — resolved by using `driverHeading` in GPS status display and switching waypoint card conditional.
+  - `onStartNavigation` callback `any` cast in `page.tsx` — typed as `(st: DriverStation) => startNavigation(st)`.
+- **Backend tests clarification:** `test_trip_api.py` and `test_multi_source_integration::test_live_stations_api_endpoint` make real external HTTP calls to OCM/BEE APIs. They hang without active internet access. All offline unit tests (25 + 12 + 15 + 3 = 55 tests) pass. Run with `-k "not api_endpoint"` in sandboxed/offline environments.
+
+---
+
+## Cohort Entry 10: Codebase Cleanup & Obsolete Feature Removal (Milestone 2)
+**Date:** November 2026 *(Grand Finale Sprint)*
+
+- **Objective:** Eliminate confirmed obsolete Web3/Monad code, unreferenced components, and disabled booking stubs to leave a lean, maintainable, driver-focused codebase.
+- **Deleted Files:**
+  - `frontend/src/components/driver/GarageFleet.tsx`: 909-line component completely unreferenced in JSX; superseded by `VehicleManager.tsx`.
+  - `frontend/src/lib/monadPayment.ts`: 24-line stub file with empty wallet mocks.
+  - `frontend/src/components/driver/ParkingBookingModal.tsx`: 37-line disabled placeholder modal.
+- **Modified Files:**
+  - `frontend/src/app/users/stations/page.tsx`:
+    - Removed unused imports (`GarageFleet`, `ParkingBookingModal`, `monadPayment`).
+    - Removed all Monad wallet state (`isPayModalOpen`, `driverWalletAddress`, `driverWalletChainId`, `isDriverConnectingWallet`, `isDriverMonadActive`, `paymentTargetStation`).
+    - Removed `window.ethereum` listeners and wallet connection handlers.
+    - Removed active spot booking state and banner (`activeSpotBooking`).
+    - Removed Monad Testnet card from Profile tab.
+    - Removed global `<ParkingBookingModal>` mount and `onOpenBookingModal` callback prop.
+    - Preserved 100% of road navigation, GPS watchPosition, routeService, activeRoute, and charging session functionality.
+  - `frontend/src/components/driver/StationDetailSheet.tsx`:
+    - Removed `ParkingBookingModal` import and modal mount.
+    - Removed `isBookingModalOpen` state and `onOpenBookingModal` prop.
+    - Replaced the 2-button grid ("Book Stall & Charge" + "Start Charging") with a clean, full-width "Start Charging" action button.
+- **Verification:**
+  - TypeScript: `npx tsc --noEmit` exited with 0 errors.
+  - ESLint: `npx eslint --quiet` exited with 0 errors.
+  - Backend tests: `python -m pytest backend/tests -k "not api_endpoint"` passed 53/53 tests in 1.50s.
+  - Reference search: Zero matches for `GarageFleet`, `monadPayment`, `ParkingBookingModal`, `isPayModalOpen`, `activeSpotBooking`.
