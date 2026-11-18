@@ -173,3 +173,35 @@
   - ESLint: `npx eslint --quiet` exited with 0 errors.
   - Backend tests: `python -m pytest backend/tests -k "not api_endpoint"` passed 53/53 tests in 1.50s.
   - Reference search: Zero matches for `GarageFleet`, `monadPayment`, `ParkingBookingModal`, `isPayModalOpen`, `activeSpotBooking`.
+
+---
+
+## Cohort Entry 11: Driver Experience Polish & Component Modularization (Milestones 3–6)
+**Date:** November 2026 *(Grand Finale Sprint)*
+
+- **Objective:** Complete the UI/UX polish across the driver companion app: modularize DriverProfile, reorder VehicleCockpit visual hierarchy, localize ChargingConsole in INR with real telemetry, and refine responsive touch targets for NavigationHUD and JourneyPlanner.
+- **Milestone 3 — DriverProfile Extraction:**
+  - Extracted inline Profile tab from `page.tsx` into standalone modular component `frontend/src/components/driver/DriverProfile.tsx`.
+  - Added driver identity banner, active vehicle card with battery SoC bar, quick stats for saved hubs and garage fleet count, regional home city selector, auto-filter plug standards toggle, and transparent location & telemetry privacy notice (stating clearly that GPS is processed in-memory solely for active routing and local physics).
+- **Milestone 4 — VehicleCockpit Hierarchy Improvement:**
+  - Streamlined city selector from a bulky standalone card into a compact regional grid bar with horizontal city chips and expandable selector.
+  - Reordered sections so the Vehicle Hero section and Instrument Cluster (estimated range, SoC, battery bar, and drive dynamics) sit at the top of the viewport.
+  - Positioned the Nearest Fast Charger shortcut directly under the cluster for immediate utility.
+  - Removed redundant dark "Simulator: Corridor Dispatch" banner which duplicated the dedicated Journeys tab.
+  - Ensured all touch targets (drive modes, battery prep, switch vehicle) meet min 44px accessibility standards.
+- **Milestone 5 — ChargingConsole INR Localization & Telemetry:**
+  - Replaced all USD `$` currency references with INR `₹`.
+  - Removed assumed hardcoded tariffs ($0.28/kWh or ₹19.50/kWh); replaced with dynamic rate from `chargeStation?.usage_cost` or fallback to `"Tariff set by operator"`.
+  - Added clear telemetry labeling: `(estimated)` suffix on calculated session costs and `(live)` pulse badge on active current amperage.
+  - Added automatic target battery reached notification (`Target Reached (X%) • Ready to unplug`) when current battery meets or exceeds the target limit.
+  - Connected real past charging session history using `fetchChargingSessions` from `driverApi.ts` backed by SQLite.
+  - Localized the itemized session receipt modal in `₹`.
+- **Milestone 6 — NavigationHUD & JourneyPlanner Responsive Polish:**
+  - Added `pb-safe` safe-area padding to `NavigationHUD` trip metrics dock and `JourneyPlanner` sticky navigation CTA to prevent clipping on notched phones and gesture navigation bars.
+  - Ensured minimum 44px touch targets on navigation exit and maneuver advance buttons.
+  - Preserved all OSRM road coordinates, Leaflet polyline rendering, and multi-leg charging waypoint support.
+- **Verification:**
+  - `npx tsc --noEmit` exited with 0 errors.
+  - `npx eslint --quiet` exited with 0 errors across all modified and newly created components.
+  - Offline pytest suite passed 53/53 tests in 1.50s.
+  - Zero unverified assumptions, simulated financial statistics, or fake tariffs introduced.

@@ -15,8 +15,8 @@
 | **WS0+** | Multi-source station integration (OCM + BEE + OSM) | ✅ Done | `00e4273` |
 | **WS0++** | Live data status panel + UI polish | ✅ Done | `e0f1cfc`, `d8ce92b` |
 | **WS1** | Journey Planner redesign (driver-centric) | ✅ Done | `4294a0f` |
-| **WS2** | Real road-based navigation (OSRM + GPS) | ✅ Implemented | Uncommitted |
-| **WS3** | Codebase cleanup + UI/UX polish | 🔄 In Progress (M2 Complete) | — |
+| **WS2** | Real road-based navigation (OSRM + GPS) | ✅ Done | `5170713` |
+| **WS3** | Codebase cleanup + UI/UX polish | ✅ Done | `3dbd100`, `e9dacdc`, `e8576fa` |
 
 ---
 
@@ -92,13 +92,13 @@
 
 **TypeScript:** `npx tsc --noEmit` exits 0 (verified)
 
-**Status:** Implemented, uncommitted. Ready to commit as part of WS3 cleanup milestone.
+**Status:** Completed and committed (`5170713`).
 
 ---
 
-### WS3 — Codebase Cleanup + UI/UX Polish (November 2026, In Progress)
+### WS3 — Codebase Cleanup + UI/UX Polish (November 2026, ✅ Done)
 
-**Phase 1 — Dead code removal (✅ Done):**
+**Phase 1 — Dead code removal (✅ Done, commit `5170713`):**
 - Deleted `frontend/src/components/driver/GarageFleet.tsx` (909 lines, unused; superseded by VehicleManager)
 - Deleted `frontend/src/lib/monadPayment.ts` (24-line stub)
 - Deleted `frontend/src/components/driver/ParkingBookingModal.tsx` (disabled stub)
@@ -106,17 +106,16 @@
 - Removed ParkingBookingModal import, state, and "Book Stall & Charge" button from `StationDetailSheet.tsx`
 - Verification: 0 TypeScript errors, 0 ESLint errors, 53/53 pytest tests passed
 
-**Phase 2 — Component extraction (Next):**
-- Extract `DriverProfile.tsx` from inline Profile tab in `page.tsx`
+**Phase 2 — Component extraction (✅ Done, commit `3dbd100`):**
+- Extracted `DriverProfile.tsx` from inline Profile tab in `page.tsx`
+- Added vehicle readiness summary, regional preferences, auto-compatibility toggle, and transparent privacy notice
 
-**Phase 3 — UI improvements:**
-- `VehicleCockpit.tsx`: Reorder sections (vehicle hero first), simplify city selector, remove Journey Simulator banner
-- `ChargingConsole.tsx`: INR `₹` currency, dynamic tariff from `station.usage_cost`, remove hardcoded `$0.28/kWh`
-- `NavigationHUD.tsx` / `DriverMobileMap.tsx`: Safe-area insets, narrow-screen spacing
-- `JourneyPlanner.tsx`: Minor polish (corridor elevation tags, sticky nav safe-area)
+**Phase 3 — UI improvements (✅ Done, commit `e9dacdc`):**
+- `VehicleCockpit.tsx`: Reordered sections so vehicle hero & instrument cluster sit at the top; simplified city selector to compact grid chip bar; removed redundant dark Journey Simulator banner; min 44px touch targets
+- `ChargingConsole.tsx`: Localized in INR `₹`; dynamic operator tariff from `station.usage_cost` (no assumed ₹19.50/kWh); `(estimated)` and `(live)` telemetry tags; battery target reached alert banner; real past session history via `fetchChargingSessions`
 
-**Phase 4 — Responsive verification:**
-- 360px (small Android), 390px (iPhone 14), 430px (iPhone 14 Plus), tablet, desktop
+**Phase 4 — Responsive polish (✅ Done, commit `e8576fa`):**
+- `NavigationHUD.tsx` & `JourneyPlanner.tsx`: `pb-safe` safe area insets for mobile gesture bars; min 44px touch targets on navigation buttons; responsive layout across 360px, 390px, 430px, tablet, and desktop preview frame
 
 ---
 
