@@ -183,11 +183,11 @@ export function NavigationHUD({
       </div>
 
       {/* ── BOTTOM NAV TRIP METRICS DOCK ───────────────────────────────── */}
-      <div className="pointer-events-auto max-w-lg mx-auto w-full">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl border border-black/10 flex items-center justify-between text-[#111312]">
+      <div className="pointer-events-auto max-w-lg mx-auto w-full pb-safe mb-1">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl border border-black/10 flex items-center justify-between text-[#111312] gap-2">
           {/* Remaining Distance & ETA */}
-          <div>
-            <div className="flex items-baseline gap-1.5">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className="text-lg font-black font-mono text-[#111312]">
                 {currentLeg.distanceKm} km
               </span>
@@ -195,28 +195,28 @@ export function NavigationHUD({
                 (~{currentLeg.durationMins} min)
               </span>
             </div>
-            <div className="text-[11px] text-[#525854] font-medium flex items-center gap-1 mt-0.5">
+            <div className="text-[11px] text-[#525854] font-medium flex items-center gap-1 mt-0.5 truncate">
               <span>Arrival:</span>
               <strong className="text-[#111312] font-mono">{route.formattedEta}</strong>
             </div>
           </div>
 
           {/* Vehicle Battery SOC */}
-          <div className="text-right">
-            <div className="flex items-center justify-end gap-1 text-[11px] font-semibold text-[#16A34A]">
-              <Zap size={13} />
-              <span>EV Battery</span>
+          <div className="text-right shrink-0 px-2 border-x border-black/[0.06]">
+            <div className="flex items-center justify-end gap-1 text-[10.5px] font-semibold text-[#16A34A]">
+              <Zap size={12} aria-hidden="true" />
+              <span>EV SoC</span>
             </div>
             <div className="text-base font-black font-mono text-[#111312]">
               {activeVehicleSoc}%
             </div>
           </div>
 
-          {/* Exit Button */}
+          {/* Exit Button (Min 44px Touch Target) */}
           <button
             type="button"
             onClick={onExitNavigation}
-            className="px-3 py-2 bg-[#FAF9F6] border border-black/10 rounded-xl text-xs font-bold text-[#111312] hover:bg-[#F0EFEA] active:scale-95 transition-all cursor-pointer"
+            className="min-h-[44px] px-3.5 py-2 bg-[#FAF9F6] hover:bg-[#F0EFEA] border border-black/10 rounded-xl text-xs font-bold text-[#111312] active:scale-95 transition-all cursor-pointer shrink-0"
           >
             End
           </button>

@@ -812,7 +812,7 @@ export function JourneyPlanner({
       </div>
 
       {/* ── 6. CONTEXTUAL NAVIGATION ACTION ── */}
-      <div className="sticky bottom-0 z-20 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent pt-2.5 pb-2 shrink-0">
+      <div className="sticky bottom-0 z-20 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent pt-2.5 pb-safe pb-2 shrink-0">
         <button
           type="button"
           onClick={() =>
