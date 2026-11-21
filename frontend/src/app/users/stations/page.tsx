@@ -890,18 +890,38 @@ export default function EVVerseDriverPage() {
       <div className={`hidden md:flex w-full max-w-5xl items-center justify-between px-6 py-3 border-b text-xs z-50 transition-colors ${isFramed
         ? "border-[rgba(255,255,255,0.08)] text-[#8C938E]"
         : "border-black/[0.08] text-[#525854]"
-        }`}>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
-          <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
-            EV VERSE MOBILE DRIVER APP
+      }`}>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+              isFramed
+                ? "bg-white/10 hover:bg-white/20 text-white border-white/15"
+                : "bg-black/[0.05] hover:bg-black/[0.1] text-[#111312] border-black/10"
+            }`}
+            title="Return to EVverse Landing Page"
+          >
+            <ArrowLeft size={13} />
+            <span>Landing Page</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isFramed ? "bg-[#C8F369]" : "bg-[#16A34A]"}`} />
+            <span className={`font-bold tracking-tight ${isFramed ? "text-white" : "text-[#111312]"}`}>
+              EV VERSE MOBILE DRIVER APP
+            </span>
+          </div>
+          <span className={`text-[11px] px-2 py-0.5 rounded-md font-mono ${
+            isFramed
+              ? "bg-white/10 text-white/80"
+              : "bg-black/[0.06] text-[#525854] font-semibold"
+          }`}>
+            Live Cockpit
           </span>
         </div>
         <div className="text-[11px] font-mono text-[#8C938E]">
           iPhone 16 Pro Preview
         </div>
       </div>
-
       {/* ── Outer Mobile Container Shell ── */}
       <div
         className={`w-full flex-1 flex items-center justify-center ${isFramed ? "py-6 px-4" : "py-0 px-0 max-w-[430px]"
@@ -1083,8 +1103,29 @@ export default function EVVerseDriverPage() {
                 }}
                 aria-label="Driver App Header"
               >
-                {/* Brand Logo (Slightly larger, clean, no text, no 2.0 badge) */}
-                <div className="flex items-center gap-2 min-w-0">
+                {/* Brand Logo & Back to Home */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {activeTab !== "home" ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("home")}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] p-2 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312] cursor-pointer"
+                      title="Return to Home Cockpit"
+                      aria-label="Back to Home"
+                    >
+                      <ArrowLeft size={14} />
+                    </button>
+                  ) : (
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#111312] bg-white border border-[rgba(17,19,18,0.08)] px-2 py-1.5 rounded-xl shadow-2xs hover:bg-[#F5F4EF] transition-colors shrink-0"
+                      title="Return to EVverse Landing Page"
+                      aria-label="Back to Landing Page"
+                    >
+                      <ArrowLeft size={12} />
+                      <span>Home</span>
+                    </Link>
+                  )}
                   <div className="relative w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
                     <Image
                       src="/images/evverse-logo.png"
