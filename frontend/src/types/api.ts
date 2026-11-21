@@ -24,12 +24,36 @@ export interface OptimizeRequest {
   city?: string;
   station_count?: number; // 1-8
   scenario?: PlanningScenario;
+  method?: "auto" | "genetic_algorithm" | "qaoa" | "classical";
+  ga_population_size?: number;
+  ga_generations?: number;
   reps?: number;   // 1–5, default 1
   shots?: number;  // 128–16384, default 2048
   seed?: number;   // ≥ 0, default 42
 }
 
 // ── Sub-models ───────────────────────────────────────────────────────────────
+
+export interface AmenityProfile {
+  score: number;
+  dwell_multiplier: number;
+  dwell_time_mins: number;
+  restaurants: number;
+  hotels: number;
+  retail: number;
+  summary: string;
+}
+
+export interface DriverDemandTelemetry {
+  signal_strength: string;
+  weekly_events: number;
+  searches: number;
+  bookings: number;
+  low_battery_searches: number;
+  broken_charger_reports: number;
+  demand_boost_pct: number;
+  summary: string;
+}
 
 export interface ZoneDetail {
   label: string;
@@ -52,6 +76,8 @@ export interface ZoneDetail {
   has_existing_station?: boolean;
   existing_station_count?: number;
   existing_station_desc?: string;
+  amenity_profile?: AmenityProfile;
+  driver_demand?: DriverDemandTelemetry;
 }
 
 export interface RecommendedLocation extends ZoneDetail {
@@ -75,6 +101,11 @@ export interface RecommendationResponse {
   total_annual_revenue_usd?: number;
   average_roi_years?: number;
   zone_details: ZoneDetail[];
+  driver_demand_signals?: {
+    city: string;
+    total_signals_tracked: number;
+    hotspots: { zone: string; signal: string; boost: string }[];
+  };
 }
 
 export interface AIDemandResponse {
@@ -139,6 +170,27 @@ export interface QAOAResult {
   energy_gap: number;
 }
 
+export interface GAResult {
+  method: string;
+  selected_zones: string[];
+  station_idxs: number[];
+  best_fitness: number;
+  objective_value: number;
+  qubo_energy: number;
+  feasible: boolean;
+  n_stations: number;
+  covered_demand_kwh_h: number;
+  coverage_pct: number;
+  generations_run: number;
+  converged_generation: number;
+  runtime_s: number;
+  baseline_comparison?: Record<string, any>;
+  fitness_history?: number[];
+  avg_fitness_history?: number[];
+  matches_qubo_optimum: boolean;
+  optimality_gap: number;
+}
+
 // ── Top-level response ───────────────────────────────────────────────────────
 
 export interface OptimizeResponse {
@@ -148,6 +200,7 @@ export interface OptimizeResponse {
   classical: ClassicalResult;
   qaoa?: QAOAResult;
   qaoa_status?: string;
+  genetic_algorithm?: GAResult;
   recommendation: RecommendationResponse;
 }
 
