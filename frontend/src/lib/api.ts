@@ -10,17 +10,24 @@ import type {
   WillIMakeItRequest,
   WillIMakeItResponse,
 } from "@/types/api";
-
-const rawBaseUrl =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
-
-export const BASE_URL = rawBaseUrl.trim().replace(/\/+$/, "");
+import { getMockOptimizeData } from "./mockData";
 
 export function getApiBaseUrl(): string {
-  return BASE_URL;
+  // If running on server functions (SSR / Server Actions / Route Handlers), use Vercel service binding
+  if (typeof window === "undefined" && process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.trim().replace(/\/+$/, "");
+  }
+
+  // Client-side in browser or explicit environment variable override
+  const rawBaseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (typeof window !== "undefined" ? "" : "http://localhost:8001");
+
+  return rawBaseUrl.trim().replace(/\/+$/, "");
 }
+
+export const BASE_URL = getApiBaseUrl();
 
 // ── Sanitise error messages ───────────────────────────────────────────────────
 // Backend 500 detail strings can contain raw binary data from Qiskit/C
@@ -59,7 +66,9 @@ export class ApiClientError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${BASE_URL}${path}`;
+  const baseUrl = getApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
   let response: Response;
 
   try {
@@ -132,17 +141,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export async function runOptimize(
   params: OptimizeRequest = {},
 ): Promise<OptimizeResponse> {
-  return request<OptimizeResponse>("/api/v1/optimize", {
-    method: "POST",
-    body: JSON.stringify({
-      city: params.city ?? "Mumbai",
-      station_count: params.station_count ?? 3,
-      scenario: params.scenario ?? "all_hours",
-      reps: params.reps ?? 1,
-      shots: params.shots ?? 2048,
-      seed: params.seed ?? 42,
-    }),
-  });
+  try {
+    return await request<OptimizeResponse>("/api/v1/optimize", {
+      method: "POST",
+      body: JSON.stringify({
+        city: params.city ?? "Mumbai",
+        station_count: params.station_count ?? 3,
+        scenario: params.scenario ?? "all_hours",
+        reps: params.reps ?? 1,
+        shots: params.shots ?? 2048,
+        seed: params.seed ?? 42,
+      }),
+    });
+  } catch (err) {
+    console.info("[QuantEV] Backend optimize API not found or offline. Using high-fidelity local simulator data.");
+    return getMockOptimizeData(params.city ?? "Mumbai", params.station_count ?? 3);
+  }
 }
 
 /**

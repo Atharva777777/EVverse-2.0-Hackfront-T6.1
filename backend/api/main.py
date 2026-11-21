@@ -42,6 +42,7 @@ from backend.api.routers import health
 from backend.api.routers import live_data
 from backend.api.routers import driver
 from backend.api.routers import trip
+from backend.api.routers import journey
 from backend.data.driver_db import init_driver_db
 
 
@@ -125,4 +126,10 @@ app.include_router(
     trip.router,
     prefix="/api/v1/trip",
     tags=["trip"],
+)
+
+app.include_router(
+    journey.router,
+    prefix="/api/v1/journey",
+    tags=["journey"],
 )

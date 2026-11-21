@@ -22,6 +22,10 @@ log = logging.getLogger(__name__)
 _MODULE_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _MODULE_DIR.parents[1]
 OSM_DATASET_PATH = _PROJECT_ROOT / "data" / "processed" / "osm" / "western_zone_charging_stations.json"
+if not OSM_DATASET_PATH.exists():
+    _local_osm = _MODULE_DIR / "processed" / "osm" / "western_zone_charging_stations.json"
+    if _local_osm.exists():
+        OSM_DATASET_PATH = _local_osm
 
 
 @dataclass

@@ -1,0 +1,351 @@
+{
+  "timestamp": "2026-11-16T10:16:17.803080+00:00",
+  "overall_status": "PASSED",
+  "data_sources": {
+    "open_charge_map": {
+      "status": "PASSED",
+      "api_key_configured": true,
+      "api_key_format_valid": true,
+      "auth_response_code": 200,
+      "station_retrieval_success": true,
+      "pune_station_count": 25,
+      "mumbai_station_count": 8,
+      "schema_fields": [
+        "AddressInfo",
+        "Connections",
+        "DataProviderID",
+        "DataQualityLevel",
+        "DateCreated",
+        "DateLastStatusUpdate",
+        "DateLastVerified",
+        "ID",
+        "IsRecentlyVerified",
+        "NumberOfPoints",
+        "OperatorID",
+        "StatusTypeID",
+        "SubmissionStatusTypeID",
+        "UUID",
+        "UsageTypeID"
+      ],
+      "sample_stations": [
+        {
+          "id": "OCM-502293",
+          "title": "MobiLane Bluegrass Business Park",
+          "city": "Pune",
+          "latitude": 18.55023676,
+          "longitude": 73.89425316,
+          "operator": null,
+          "status": null,
+          "is_operational": null,
+          "connections": [
+            {
+              "type": null,
+              "power_kw": null,
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "OCM-461277",
+          "title": "Shashtri Nagar ",
+          "city": "Pune",
+          "latitude": 18.503925778446245,
+          "longitude": 73.80373433483828,
+          "operator": null,
+          "status": null,
+          "is_operational": null,
+          "connections": [
+            {
+              "type": null,
+              "power_kw": 1,
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "OCM-485113",
+          "title": "Panchjanya Automobiles",
+          "city": "Pune",
+          "latitude": 18.482695102792377,
+          "longitude": 73.80274365086417,
+          "operator": null,
+          "status": null,
+          "is_operational": null,
+          "connections": [
+            {
+              "type": null,
+              "power_kw": 60,
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "error_handling": {
+        "invalid_api_key": "HTTP 403 (Forbidden)",
+        "missing_api_key": "HTTP 403 (Forbidden)"
+      },
+      "licensing": {
+        "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+        "attribution": "Open Charge Map Contributors",
+        "terms_url": "https://openchargemap.org/site/develop/terms"
+      },
+      "notes": []
+    },
+    "bee": {
+      "status": "PASSED",
+      "configured_base_url": "https://ev-charging-stations-api.vercel.app",
+      "reachable": true,
+      "endpoints_tested": {
+        "GET /v1/stations/near": {
+          "status": 200,
+          "count": 25,
+          "cache_header": "public"
+        },
+        "GET /v1/stations?city=Pune": {
+          "status": 200,
+          "count": 25
+        },
+        "GET /v1/cities": {
+          "status": 200,
+          "total_cities": 5329
+        }
+      },
+      "pune_near_records_count": 25,
+      "pune_city_records_count": 25,
+      "total_national_stations_catalogued": 29184,
+      "total_national_chargers_catalogued": 39640,
+      "schema_fields": [
+        "address",
+        "chargers",
+        "city",
+        "currents",
+        "distance_km",
+        "district",
+        "id",
+        "latitude",
+        "location_quality",
+        "longitude",
+        "max_kw_by_standard",
+        "max_power_kw",
+        "mixed_admin",
+        "operator",
+        "ownership",
+        "standards",
+        "state",
+        "state_code",
+        "total_chargers",
+        "total_connectors",
+        "vehicle_classes"
+      ],
+      "sample_stations": [
+        {
+          "id": "evs_38ccb292c7",
+          "operator": "UJOY",
+          "ownership": "private",
+          "city": "Pune",
+          "district": "Pune",
+          "address": "Kasba Peth",
+          "latitude": 18.521995,
+          "longitude": 73.859801,
+          "max_power_kw": 3.3,
+          "total_chargers": 1,
+          "total_connectors": 1,
+          "standards": [
+            "LEV_AC"
+          ],
+          "distance_km": 0.37
+        },
+        {
+          "id": "evs_bc7bac9fe7",
+          "operator": "UJOY",
+          "ownership": "private",
+          "city": "Pune",
+          "district": "Pune",
+          "address": "Gulabkunj Apartment Parking, 377/A Shaniwar Peth Pune 411030.",
+          "latitude": 18.517714,
+          "longitude": 73.852806,
+          "max_power_kw": 3.3,
+          "total_chargers": 1,
+          "total_connectors": 1,
+          "standards": [
+            "LEV_AC"
+          ],
+          "distance_km": 0.51
+        },
+        {
+          "id": "evs_a1cf7a5213",
+          "operator": "UJOY",
+          "ownership": "private",
+          "city": "Pune",
+          "district": "Pune",
+          "address": "Pune Municipal Corporation Building",
+          "latitude": 18.523939,
+          "longitude": 73.853442,
+          "max_power_kw": 3.3,
+          "total_chargers": 1,
+          "total_connectors": 1,
+          "standards": [
+            "LEV_AC"
+          ],
+          "distance_km": 0.52
+        }
+      ],
+      "rate_limiting": {
+        "policy": "100 requests per 15 minutes per client address",
+        "status_on_limit": "HTTP 429 Too Many Requests (with Retry-After header)"
+      },
+      "caching": "s-maxage=3600 (cacheable for 1 hour)",
+      "licensing": {
+        "source": "Bureau of Energy Efficiency (BEE), Ministry of Power, Government of India",
+        "dataset": "EV Public Charging Stations Data till 26th October 2025",
+        "provider": "India EV Charging Station Directory REST API (Open Source Community India)"
+      },
+      "error_handling": {
+        "unknown_parameter": "HTTP 400: Unknown query parameter 'radius_km'.",
+        "nonexistent_city": "HTTP 404: No city matches 'InvalidNonExistentCity999'."
+      },
+      "notes": []
+    },
+    "local_osm": {
+      "status": "PASSED",
+      "dataset_exists": true,
+      "total_records": 83,
+      "nodes_count": 70,
+      "ways_count": 13,
+      "pune_metro_count": 38,
+      "mumbai_metro_count": 8,
+      "corridor_count": 1,
+      "other_western_zone_count": 36,
+      "coordinate_audit": {
+        "all_valid_wgs84": true,
+        "min_latitude": 15.112474,
+        "max_latitude": 24.134218,
+        "min_longitude": 72.158904,
+        "max_longitude": 80.581515
+      },
+      "duplicate_audit": {
+        "duplicate_ids": [],
+        "exact_coord_duplicates": [],
+        "near_duplicates_under_10m": [
+          {
+            "id1": "node/13805934243",
+            "id2": "way/1510242804",
+            "distance_m": 1.73,
+            "name1": null,
+            "name2": null,
+            "operator1": "Uplug",
+            "operator2": "Uplug",
+            "explanation": "Dual mapping: one mapper created a node while another mapped the station building polygon (way). Both represent the same physical charging site."
+          }
+        ]
+      },
+      "completeness_audit": {
+        "name": {
+          "present": 16,
+          "missing": 67,
+          "percentage": 19.3
+        },
+        "operator_or_brand": {
+          "present": 63,
+          "missing": 20,
+          "percentage": 75.9
+        },
+        "capacity": {
+          "present": 38,
+          "missing": 45,
+          "percentage": 45.8
+        },
+        "sockets": {
+          "present": 7,
+          "missing": 76,
+          "percentage": 8.4
+        },
+        "max_power": {
+          "present": 1,
+          "missing": 82,
+          "percentage": 1.2
+        },
+        "opening_hours": {
+          "present": 2,
+          "missing": 81,
+          "percentage": 2.4
+        },
+        "fee_info": {
+          "present": 32,
+          "missing": 51,
+          "percentage": 38.6
+        },
+        "access_restrictions": {
+          "present": 36,
+          "missing": 47,
+          "percentage": 43.4
+        },
+        "address": {
+          "present": 2,
+          "missing": 81,
+          "percentage": 2.4
+        }
+      },
+      "licensing": {
+        "license": "Open Database License 1.0 (ODbL)",
+        "attribution": "\u00a9 OpenStreetMap contributors",
+        "copyright_url": "https://www.openstreetmap.org/copyright"
+      },
+      "fabrication_verification": {
+        "fabricated_power_detected": false,
+        "fabricated_connectors_detected": false,
+        "unspecified_preserved_as_null": true
+      },
+      "tagging_patterns_audit": {
+        "amenity_charging_station_records": 83,
+        "alternative_charge_point_nodes_in_pbf": 4,
+        "device_charging_station_nodes_in_pbf": 2,
+        "notes": "4 chargers in PBF were tagged man_made=charge_point (e.g. ChargeZone 30kW units) rather than amenity=charging_station. Mobile phone chargers (amenity=device_charging_station) were correctly excluded."
+      }
+    }
+  },
+  "cross_provider_analysis": {
+    "provider_counts_in_pune": {
+      "open_charge_map": 25,
+      "bee": 25,
+      "local_osm": 38
+    },
+    "spatial_cross_matches": [],
+    "deduplication_strategy": {
+      "spatial_radius_threshold_meters": 75.0,
+      "matching_keys": [
+        "fuzzy_name_match",
+        "operator_match",
+        "haversine_distance"
+      ],
+      "recommended_primary_source_for_connectors": "Open Charge Map & BEE (verified kW ratings)",
+      "recommended_primary_source_for_geometry": "OpenStreetMap (exact way footprints & micro-coordinates)"
+    },
+    "data_freshness_and_telemetry": {
+      "mapped_vs_operational_distinction": {
+        "osm": "Static physical presence mapped by community contributors. No live status or occupancy telemetry.",
+        "bee": "Official government registry of public EV chargers. Represents authorized infrastructure, updated periodically (batch snapshot). No live occupancy.",
+        "open_charge_map": "Community registry with operational status flags (Operational/Partially Operational) and recent verification timestamps, but occupancy/availability is volunteer check-in driven rather than live OCPP socket telemetry."
+      }
+    }
+  },
+  "integration_readiness": {
+    "status": "READY_FOR_INTEGRATION",
+    "existing_components": {
+      "open_charge_map_service": "backend/data/open_charge_map.py (implements OpenChargeMapService with in-memory caching and NormalizedStation dataclass)",
+      "live_data_router": "backend/api/routers/live_data.py (exposes GET /api/v1/live-stations)",
+      "driver_db": "backend/data/driver_db.py (SQLite DB at data/driver.db storing vehicles, sessions, favorites)"
+    },
+    "identified_gaps_before_future_integration": [
+      "Local OSM dataset (83 stations) currently sits in data/processed/osm/ but is not yet ingested into a unified StationRepository or live_data router.",
+      "BEE API endpoints (/v1/stations/near) are fully operational and verified, but backend currently queries only OCM directly.",
+      "Frontend currently consumes live stations via /api/v1/live-stations, which returns OCM data with Kaggle fallback."
+    ],
+    "conflicts_detected": [],
+    "simulated_vs_real_data_boundary": {
+      "real_external_data": "Open Charge Map (real-time POIs via API key), BEE API (real national directory), Local OSM Western Zone (real physical stations extracted from Geofabrik)",
+      "simulated_data": "Driver cockpit vehicle telemetry (battery SOC, estimated range, tire pressure, temperature) is currently simulated for UX demonstration.",
+      "static_baseline": "Kaggle EV dataset used as graceful fallback when external network APIs are unreachable."
+    }
+  }
+}

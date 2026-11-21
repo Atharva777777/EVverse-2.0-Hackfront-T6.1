@@ -17,8 +17,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
 
-# Default database path inside the project data directory
-DB_PATH = Path(os.environ.get("DRIVER_DB_PATH", "data/driver.db"))
+# Default database path inside the project data directory (or /tmp on Vercel serverless)
+_default_db = "/tmp/driver.db" if os.environ.get("VERCEL") else "data/driver.db"
+DB_PATH = Path(os.environ.get("DRIVER_DB_PATH", _default_db))
 
 _lock = threading.Lock()
 

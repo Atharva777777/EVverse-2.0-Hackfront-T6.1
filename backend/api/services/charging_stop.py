@@ -124,6 +124,10 @@ class RecommendedStop:
     is_backup: bool = False
     status_note: Optional[str] = None
     recent_reports: List[Dict[str, Any]] = field(default_factory=list)
+    # True when this stop alone cannot cover the remaining distance (another charge is needed downstream)
+    requires_additional_stop: bool = False
+    # Battery % on arrival at the destination after charging here (None when more stops are needed)
+    destination_soc_pct: Optional[float] = None
 
 
 @dataclass
@@ -414,6 +418,10 @@ def recommend_charging_stops(
             qualification_reason=reason,
             status_note=status_note,
             recent_reports=recent_reports,
+            requires_additional_stop=is_multi_leg,
+            destination_soc_pct=None if is_multi_leg else round(
+                max(0.0, target_departure_soc - (energy_remaining_needed / usable_kwh) * 100.0), 1
+            ),
         ))
 
     # 5. Rank and select Primary & Backup Stops

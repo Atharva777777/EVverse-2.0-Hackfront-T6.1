@@ -1,0 +1,202 @@
+{
+  "dataset_name": "OpenStreetMap Western Zone India - Charging Stations",
+  "generated_at": "2026-11-16T10:55:49.882527+00:00",
+  "source_url": "https://download.geofabrik.de/asia/india/western-zone-latest.osm.pbf",
+  "license": "ODbL-1.0",
+  "attribution": "© OpenStreetMap contributors",
+  "file_sizes": {
+    "pbf_raw_mb": 212.0,
+    "extracted_json_kb": 108.99
+  },
+  "counts": {
+    "total_records_extracted": 103,
+    "unique_physical_stations": 97,
+    "physical_duplicates_detected": 6,
+    "nodes": 90,
+    "ways": 13,
+    "amenity_charging_station": 83,
+    "man_made_charge_point": 20
+  },
+  "geographic_bounds": {
+    "min_latitude": 15.112474,
+    "max_latitude": 24.221017,
+    "min_longitude": 69.023613,
+    "max_longitude": 80.581515
+  },
+  "regional_breakdown": {
+    "pune_metro": {
+      "count": 42,
+      "percentage": 40.8
+    },
+    "mumbai_metro": {
+      "count": 10,
+      "percentage": 9.7
+    },
+    "mumbai_pune_corridor": {
+      "count": 4,
+      "percentage": 3.9
+    },
+    "other_western_zone": {
+      "count": 47,
+      "percentage": 45.6
+    }
+  },
+  "attribute_completeness": {
+    "name": {
+      "present": 20,
+      "percentage": 19.4
+    },
+    "operator_or_brand": {
+      "present": 65,
+      "percentage": 63.1
+    },
+    "capacity": {
+      "present": 44,
+      "percentage": 42.7
+    },
+    "socket_types": {
+      "present": 9,
+      "percentage": 8.7
+    },
+    "max_power": {
+      "present": 4,
+      "percentage": 3.9
+    },
+    "opening_hours": {
+      "present": 2,
+      "percentage": 1.9
+    },
+    "fee_info": {
+      "present": 34,
+      "percentage": 33.0
+    },
+    "access_restrictions": {
+      "present": 36,
+      "percentage": 35.0
+    },
+    "address": {
+      "present": 2,
+      "percentage": 1.9
+    }
+  },
+  "top_operators": [
+    [
+      "[Unspecified]",
+      38
+    ],
+    [
+      "Tata Power",
+      6
+    ],
+    [
+      "Ather Energy",
+      5
+    ],
+    [
+      "ChargeZone",
+      5
+    ],
+    [
+      "Tata power",
+      4
+    ],
+    [
+      "Shell",
+      3
+    ],
+    [
+      "Statiq",
+      2
+    ],
+    [
+      "Bijlify",
+      2
+    ],
+    [
+      "Drive",
+      2
+    ],
+    [
+      "Uplug",
+      2
+    ],
+    [
+      "PRSANNA",
+      1
+    ],
+    [
+      "INDIAN OILS",
+      1
+    ]
+  ],
+  "top_socket_types": [
+    [
+      "type2_combo",
+      8
+    ],
+    [
+      "chademo",
+      2
+    ],
+    [
+      "type2",
+      2
+    ]
+  ],
+  "physical_duplicates": [
+    {
+      "entity_id": "node/12097468581",
+      "tag_type": "man_made=charge_point",
+      "operator": null,
+      "duplicate_of": "way/359699641",
+      "parent_operator": null,
+      "distance_m": 9.38,
+      "description": "Physical duplicate: node/12097468581 (man_made=charge_point) is located 9.38m from parent facility way/359699641 (None)"
+    },
+    {
+      "entity_id": "node/12740576352",
+      "tag_type": "man_made=charge_point",
+      "operator": null,
+      "duplicate_of": "way/1385715146",
+      "parent_operator": "ChargeZone",
+      "distance_m": 1.56,
+      "description": "Physical duplicate: node/12740576352 (man_made=charge_point) is located 1.56m from parent facility way/1385715146 (ChargeZone)"
+    },
+    {
+      "entity_id": "node/12829715806",
+      "tag_type": "man_made=charge_point",
+      "operator": null,
+      "duplicate_of": "way/1385715146",
+      "parent_operator": "ChargeZone",
+      "distance_m": 2.81,
+      "description": "Physical duplicate: node/12829715806 (man_made=charge_point) is located 2.81m from parent facility way/1385715146 (ChargeZone)"
+    },
+    {
+      "entity_id": "node/12830937675",
+      "tag_type": "man_made=charge_point",
+      "operator": "ChargeZone",
+      "duplicate_of": "way/1385850870",
+      "parent_operator": "ChargeZone",
+      "distance_m": 2.1,
+      "description": "Physical duplicate: node/12830937675 (man_made=charge_point) is located 2.1m from parent facility way/1385850870 (ChargeZone)"
+    },
+    {
+      "entity_id": "node/12830937682",
+      "tag_type": "man_made=charge_point",
+      "operator": "ChargeZone",
+      "duplicate_of": "way/1385850870",
+      "parent_operator": "ChargeZone",
+      "distance_m": 3.13,
+      "description": "Physical duplicate: node/12830937682 (man_made=charge_point) is located 3.13m from parent facility way/1385850870 (ChargeZone)"
+    },
+    {
+      "entity_id": "node/13805934243",
+      "tag_type": "amenity=charging_station",
+      "operator": "Uplug",
+      "duplicate_of": "way/1510242804",
+      "parent_operator": "Uplug",
+      "distance_m": 1.73,
+      "description": "Physical duplicate: node/13805934243 (amenity=charging_station) is located 1.73m from parent facility way/1510242804 (Uplug)"
+    }
+  ]
+}

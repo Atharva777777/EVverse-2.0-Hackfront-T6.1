@@ -253,6 +253,9 @@ class MultiSourceStationService:
                     connector_types.append(sock_name)
 
         address = raw.get("address")
+        if isinstance(address, dict):
+            parts = [str(val) for val in address.values() if val]
+            address = ", ".join(parts) if parts else None
         extraction_ts = raw.get("extraction_timestamp") or datetime.now(timezone.utc).isoformat()
 
         return NormalizedStation(

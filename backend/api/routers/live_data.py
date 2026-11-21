@@ -21,7 +21,7 @@ import logging
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from backend.data.multi_source_service import get_multi_source_service
 
@@ -47,6 +47,14 @@ class LiveStation(BaseModel):
     source_ids: Dict[str, str] = Field(default_factory=dict, description="IDs across provider registries")
     attribution: Optional[str] = Field(default=None, description="Licensing and source attribution")
     last_status_update: Optional[str] = Field(default=None, description="ISO timestamp of last known status update")
+
+    @field_validator("address", mode="before")
+    @classmethod
+    def normalize_address(cls, v):
+        if isinstance(v, dict):
+            parts = [str(val) for val in v.values() if val]
+            return ", ".join(parts) if parts else None
+        return v
 
 
 class SourceStatus(BaseModel):

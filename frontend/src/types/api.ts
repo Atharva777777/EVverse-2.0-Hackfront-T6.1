@@ -506,3 +506,202 @@ export interface WillIMakeItResponse {
   charging: ChargingRecommendation;
 }
 
+
+// ── Journey Intelligence ─────────────────────────────────────────────────────
+
+export type JourneyOptionKind = "balanced" | "fewer_charging" | "safer" | "faster";
+export type StationStatusBasis =
+  | "directory_recent"
+  | "directory_stale"
+  | "directory_undated"
+  | "unknown";
+
+export interface JourneyCandidateStation {
+  station_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  power_kw: number | null;
+  connector_types: string[];
+  status?: string | null;
+  is_operational?: boolean | null;
+  operator?: string | null;
+  address?: string | null;
+  source?: string | null;
+  sources?: string[] | null;
+  last_status_update?: string | null;
+}
+
+export interface JourneyAnalyzeRequest {
+  vehicle: WillIMakeItRequest["vehicle"];
+  distance_km: number;
+  start_battery_pct: number;
+  reserve_buffer_pct: number;
+  elevation_gain_m: number;
+  payload_kg: number;
+  ambient_temp_c?: number | null;
+  hvac_mode: string;
+  driving_style: string;
+  duration_mins?: number | null;
+  origin_coords?: [number, number] | null;
+  destination_coords?: [number, number] | null;
+  candidate_stations: JourneyCandidateStation[];
+  city?: string;
+  route_source: "osrm" | "corridor_table" | "unknown";
+  elevation_source: "corridor_table" | "unknown";
+  origin_is_approximate: boolean;
+  constraints?: JourneyConstraints;
+}
+
+export interface JourneyConstraints {
+  max_charging_stops?: number;
+  charging_speed?: "fast" | "standard";
+  route_preference?: "fewer_stops" | "reliable_chargers" | "safer" | "faster" | "economical";
+}
+
+export interface JourneyAiStatus {
+  available: boolean;
+  voice: boolean;
+  languages: { code: string; name: string }[];
+}
+
+export interface JourneyIntentResult {
+  source: "sarvam" | "rules";
+  ai_fallback_reason: string | null;
+  language: string | null;
+  applied: {
+    destination?: string;
+    battery_pct?: number;
+    reserve_pct?: number;
+    driving_style?: "eco" | "normal" | "sport";
+    hvac_mode?: "off" | "eco" | "normal" | "max";
+  };
+  constraints: JourneyConstraints;
+  vehicle: { id: string; name: string } | null;
+  preference_proposals: { key: string; value: boolean | number; label: string }[];
+  clarifications: { field: string; question: string; options: string[] }[];
+  notes: string[];
+  understood: string[];
+}
+
+export interface JourneyExplainResponse {
+  explanation: string | null;
+  reason?: string;
+  language?: string;
+  source?: "sarvam";
+}
+
+export interface JourneyStop {
+  role: "primary" | "backup";
+  station_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  address?: string | null;
+  operator?: string | null;
+  connectors_matched: string[];
+  ac_only: boolean;
+  detour_km: number;
+  detour_mins: number;
+  distance_along_route_km: number;
+  arrival_soc_pct: number;
+  power_kw_listed: number | null;
+  power_basis: "listed" | "registry_unverified" | "unknown";
+  assumed_power_kw: number | null;
+  charge_to_pct: number;
+  charge_mins: number;
+  charge_time_is_estimate: boolean;
+  needs_additional_charge_later: boolean;
+  recent_driver_reports: number;
+  why: string;
+  data_source: string;
+  status_basis: StationStatusBasis;
+  status_label: string;
+  status_updated_at?: string | null;
+  status_age_days: number | null;
+  freshness_label: string;
+}
+
+export interface JourneyOption {
+  kind: JourneyOptionKind;
+  title: string;
+  route_label: string;
+  verdict: "SAFE" | "CAUTION" | "CHARGING_NEEDED";
+  viability: number;
+  distance_km: number;
+  drive_mins: number | null;
+  charging_extra_mins: number | null;
+  total_mins: number | null;
+  energy_kwh: number;
+  arrival_soc_pct: number;
+  arrival_soc_with_stop_pct: number | null;
+  arrival_soc_range_pct: [number, number];
+  reserve_target_pct: number;
+  assumption_changes: string[];
+  charging_stops: JourneyStop[];
+  charging_stops_needed: number;
+  charging_optional: boolean;
+  stations_evaluated: number;
+  summary: string;
+  recommended: boolean;
+  recommendation_reason?: string;
+}
+
+export interface JourneyRecoveryAction {
+  kind: "set_battery" | "set_driving_style" | "set_payload";
+  value: number | string;
+  label: string;
+}
+
+export interface JourneyAnalysis {
+  headline: string;
+  detail: string;
+  verdict: "SAFE" | "CAUTION" | "CHARGING_NEEDED";
+  recommended_kind: JourneyOptionKind;
+  options: JourneyOption[];
+  recovery: { text: string; action: JourneyRecoveryAction | null }[];
+  warnings: { level: "info" | "warn" | "alert"; text: string }[];
+  assumptions: string[];
+  vehicle: {
+    name: string;
+    usable_kwh: number;
+    efficiency_kwh100km: number;
+    plug_type: string;
+    max_dc_speed_kw: number | null;
+    estimated_fields: string[];
+  };
+  applied_preferences: string[];
+  generated_at: string;
+}
+
+export interface JourneyPreference {
+  key: string;
+  label: string;
+  value: boolean | number | null;
+  is_set: boolean;
+  source: "default" | "explicit" | "accepted_suggestion";
+  evidence: string | null;
+  updated_at: string | null;
+}
+
+export interface JourneyPreferencesResponse {
+  preferences: JourneyPreference[];
+  journeys_recorded: number;
+}
+
+export interface JourneySuggestion {
+  key: string;
+  value: boolean | number;
+  text: string;
+  evidence: string;
+}
+
+export interface JourneyParseResult {
+  recognized: string[];
+  destination?: string;
+  destination_unmatched?: string;
+  battery_pct?: number;
+  reserve_pct?: number;
+  driving_style?: "eco" | "sport";
+  hvac_mode?: "off";
+}

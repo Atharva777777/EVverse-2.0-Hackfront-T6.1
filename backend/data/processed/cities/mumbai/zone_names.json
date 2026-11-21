@@ -1,0 +1,34 @@
+{
+  "Z0": {
+    "primary": "Bandra Kurla Complex (BKC)",
+    "secondary": "Corporate & Financial Core"
+  },
+  "Z1": {
+    "primary": "Navi Mumbai (Vashi Gateway)",
+    "secondary": "Eastern Express Commercial Belt"
+  },
+  "Z2": {
+    "primary": "Powai & Hiranandani Tech Valley",
+    "secondary": "Central Suburbs IT Corridor"
+  },
+  "Z3": {
+    "primary": "Nariman Point & Marine Drive",
+    "secondary": "South Mumbai Coastal Business Corridor"
+  },
+  "Z4": {
+    "primary": "Andheri West & Lokhandwala",
+    "secondary": "Western Media & Retail Hub"
+  },
+  "Z5": {
+    "primary": "South Mumbai (Colaba & Fort CBD)",
+    "secondary": "Ballard Pier & Gateway Commercial District"
+  },
+  "Z6": {
+    "primary": "Ghatkopar & Kurla Central Junction",
+    "secondary": "Central Transit & Metro Interchange"
+  },
+  "Z7": {
+    "primary": "Lower Parel & Dadar Commercial Hub",
+    "secondary": "High Street Phoenix & Mills District"
+  }
+}

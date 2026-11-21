@@ -49,7 +49,7 @@ export function saveStoredDriverToken(token: string): void {
 
 // ── Generic Authenticated Request Helper ──────────────────────────────────────
 
-async function driverRequest<T>(
+export async function driverRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {

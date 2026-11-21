@@ -74,6 +74,12 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
+## Sarvam AI (optional)
+
+Natural-language, multilingual and voice journey input plus plain-language explanations. Off unless `SARVAM_API_KEY` is set; the planner works identically without it. See [docs/SARVAM_INTEGRATION.md](docs/SARVAM_INTEGRATION.md).
+
+---
+
 ## Running Tests
 
 ### Backend Tests
