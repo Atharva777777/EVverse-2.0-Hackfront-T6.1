@@ -491,13 +491,15 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
               </p>
             )}
           </div>
+        </div>
 
-          {/* Primary Action Button Bar */}
-          <div className="space-y-2 pt-2">
+        {/* Sticky Action Footer (Always accessible on mobile) */}
+        <div className="shrink-0 p-4 border-t border-[rgba(17,19,18,0.07)] bg-white/95 backdrop-blur-md pb-safe space-y-2">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => onStartNavigation(station)}
-              className="w-full min-h-[52px] py-3.5 px-6 bg-[#111312] text-white rounded-2xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#252826] active:scale-[0.99] transition-all shadow-md cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+              className="flex-1 min-h-[48px] py-3 px-4 bg-[#111312] text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#252826] active:scale-[0.99] transition-all shadow-md cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
             >
               <Navigation size={15} className="text-[#C8F369]" aria-hidden="true" />
               <span>Start Navigation</span>
@@ -506,23 +508,22 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
             <button
               type="button"
               onClick={() => onStartCharging(station)}
-              className="w-full min-h-[44px] py-2.5 px-4 bg-[#C8F369] text-[#111312] border border-[#111312] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#BCE95D] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+              className="min-h-[48px] py-3 px-4 bg-[#C8F369] text-[#111312] border border-[#111312] rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#BCE95D] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312] shrink-0"
             >
               <Zap size={14} aria-hidden="true" />
-              <span>Start Charging</span>
+              <span>Charge</span>
             </button>
-
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${details.latitude},${details.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full min-h-[36px] py-2 bg-[#FAF9F6] border border-[rgba(17,19,18,0.08)] text-[#525854] hover:text-[#111312] rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#F4F3EE] transition-all cursor-pointer"
-            >
-              <span>Open in Google Maps</span>
-              <ExternalLink size={11} aria-hidden="true" />
-            </a>
           </div>
 
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${details.latitude},${details.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full min-h-[34px] py-1.5 bg-[#FAF9F6] border border-[rgba(17,19,18,0.08)] text-[#525854] hover:text-[#111312] rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#F4F3EE] transition-all cursor-pointer"
+          >
+            <span>Open in Google Maps</span>
+            <ExternalLink size={11} aria-hidden="true" />
+          </a>
         </div>
       </aside>
 

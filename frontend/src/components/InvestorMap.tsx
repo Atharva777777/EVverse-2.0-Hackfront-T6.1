@@ -202,16 +202,11 @@ export function InvestorMap({
 
 
       {/* ── HEADER ─────────────────────────────────────────── */}
-
       <header
-
         className="glass"
-
-        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: "56px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: "1px solid rgba(255,255,255,0.5)" }}
-
+        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: "56px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", borderBottom: "1px solid rgba(255,255,255,0.5)" }}
       >
-
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <Link href={backHref} style={{ textDecoration: "none", color: "var(--color-ink-3)", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontFamily: "Times New Roman, serif" }}>
             ← Back
           </Link>
@@ -220,25 +215,19 @@ export function InvestorMap({
           </div>
         </div>
 
-
-
-        <div style={{ fontFamily: "Times New Roman, serif", fontSize: "13px", color: "var(--color-ink-4)" }}>
-
+        <div className="hidden md:block" style={{ fontFamily: "Times New Roman, serif", fontSize: "13px", color: "var(--color-ink-4)" }}>
           {phaseLabel[phase]}
-
         </div>
 
-
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {/* Subtle Live Data indicator pill */}
           {liveData && (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
+                gap: "5px",
+                padding: "4px 8px",
                 borderRadius: "8px",
                 border: isLive
                   ? "1px solid rgba(16, 185, 129, 0.4)"
@@ -248,7 +237,7 @@ export function InvestorMap({
                   : "rgba(243, 244, 246, 0.7)",
                 color: isLive ? "#047857" : "var(--color-ink-3)",
                 fontFamily: "Times New Roman, serif",
-                fontSize: "11.5px",
+                fontSize: "11px",
                 letterSpacing: "0.02em",
                 cursor: "default",
                 userSelect: "none",
@@ -272,10 +261,10 @@ export function InvestorMap({
                 }}
               />
               <span style={{ fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                {isLive ? "LIVE DATA" : "BASELINE DATA"}
+                {isLive ? "LIVE" : "DATA"}
               </span>
-              <span style={{ color: isLive ? "rgba(4,120,87,0.7)" : "var(--color-ink-4)", fontSize: "11px" }}>
-                · {liveCount} stations · {lastUpdatedTime}
+              <span className="hidden sm:inline" style={{ color: isLive ? "rgba(4,120,87,0.7)" : "var(--color-ink-4)", fontSize: "11px" }}>
+                · {liveCount} stations
               </span>
             </div>
           )}
@@ -283,11 +272,11 @@ export function InvestorMap({
           <button
             type="button"
             onClick={() => setSpatialModalOpen(true)}
+            className="hidden sm:flex"
             style={{
-              display: "flex",
               alignItems: "center",
               gap: "6px",
-              padding: "5px 12px",
+              padding: "5px 10px",
               borderRadius: "8px",
               border: "1px solid var(--color-navy-200)",
               background: "var(--color-navy-50)",
@@ -300,14 +289,14 @@ export function InvestorMap({
             title="View 3D Station Model & Investment Pro-Forma"
           >
             <Building2 size={13} />
-            <span>3D Station Model</span>
+            <span>3D Model</span>
           </button>
 
           <button
             type="button"
             onClick={() => setQuantumModalOpen(true)}
+            className="hidden lg:flex"
             style={{
-              display: "flex",
               alignItems: "center",
               gap: "6px",
               padding: "5px 12px",
@@ -323,14 +312,14 @@ export function InvestorMap({
             title="Inspect Combinatorial Scaling & IBM Fez Heron QPU Verification"
           >
             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#00d084" }} />
-            Quantum Scalability (IBM Fez)
+            Quantum (IBM Fez)
           </button>
 
           <button
             type="button"
             onClick={() => setReportModalOpen(true)}
+            className="hidden md:flex"
             style={{
-              display: "flex",
               alignItems: "center",
               gap: "6px",
               padding: "5px 12px",
@@ -349,17 +338,17 @@ export function InvestorMap({
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            Municipal Briefing
+            Briefing
           </button>
 
-          <Link href={knowledgeHref} style={{ textDecoration: "none" }}>
+          <Link href={knowledgeHref} className="hidden xs:block" style={{ textDecoration: "none" }}>
             <button
               type="button"
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "6px",
-                padding: "5px 12px",
+                gap: "5px",
+                padding: "5px 10px",
                 borderRadius: "8px",
                 border: "1px solid var(--color-border)",
                 background: "white",
@@ -372,18 +361,18 @@ export function InvestorMap({
               title="Explore EV Powertrains, Charging Standards & Knowledge"
             >
               <BookOpen size={13} />
-              <span>EV Knowledge</span>
+              <span>Guide</span>
             </button>
           </Link>
 
           {phase !== "idle" && (
             <button
               onClick={handleReset}
-              style={{ fontFamily: "Times New Roman, serif", fontSize: "13px", color: "var(--color-ink-3)", background: "none", border: "none", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", transition: "color 0.15s ease" }}
+              style={{ fontFamily: "Times New Roman, serif", fontSize: "13px", color: "var(--color-ink-3)", background: "none", border: "none", cursor: "pointer", padding: "6px 8px", borderRadius: "8px", transition: "color 0.15s ease" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-ink)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-ink-3)")}
             >
-              New analysis
+              Reset
             </button>
           )}
         </div>
@@ -417,35 +406,20 @@ export function InvestorMap({
 
 
         {/* ── LEFT OVERLAY PANEL ─────────────────────────── */}
-
         <div
-
           style={{
-
             position: "absolute",
-
-            top: "20px",
-
-            left: "20px",
-
+            top: "12px",
+            left: "12px",
             width: "360px",
-
-            maxWidth: "calc(100vw - 40px)",
-
+            maxWidth: "calc(100vw - 24px)",
             zIndex: 30,
-
             display: "flex",
-
             flexDirection: "column",
-
             gap: "10px",
-
-            maxHeight: "calc(100vh - 100px)",
-
+            maxHeight: "calc(100vh - 80px)",
             overflowY: "auto",
-
           }}
-
         >
 
 

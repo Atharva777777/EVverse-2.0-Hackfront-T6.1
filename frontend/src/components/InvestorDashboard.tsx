@@ -180,8 +180,8 @@ export function InvestorDashboard({
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF9F6] text-[#111312] selection:bg-[#111312] selection:text-white pb-28">
       {/* ── Top Header ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/[0.06] h-16 px-6 sm:px-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/[0.06] h-16 px-3 sm:px-6 md:px-10 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link href={homeHref} className="flex items-center">
             <BrandLogo suffix="Investor" />
           </Link>
@@ -190,25 +190,27 @@ export function InvestorDashboard({
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => {
               setDeployStep("form");
               setShowDeployModal(true);
             }}
-            className="px-4 py-2 rounded-xl bg-[#111312] text-white hover:bg-black font-semibold text-xs transition-all shadow-sm hover:scale-105 flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 min-h-[38px] rounded-xl bg-[#111312] text-white hover:bg-black font-semibold text-xs transition-all shadow-sm active:scale-95 flex items-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-[#C8F369]" />
-            <span>Deploy Community Stall</span>
+            <PlusCircle className="w-3.5 h-3.5 text-[#C8F369] shrink-0" />
+            <span className="hidden sm:inline">Deploy Community Stall</span>
+            <span className="inline sm:hidden">Deploy</span>
           </button>
 
           <Link href={mapHref}>
             <button
               type="button"
-              className="px-4 py-2 rounded-xl bg-white border border-black/10 hover:border-black/30 font-semibold text-xs transition-all shadow-2xs flex items-center gap-1.5 text-black/80 hover:text-black"
+              className="px-3 sm:px-4 py-2 min-h-[38px] rounded-xl bg-white border border-black/10 hover:border-black/30 font-semibold text-xs transition-all shadow-2xs flex items-center gap-1 sm:gap-1.5 text-black/80 hover:text-black shrink-0 cursor-pointer"
             >
-              <span>Spatial Planning Map</span>
+              <span className="hidden sm:inline">Spatial Planning Map</span>
+              <span className="inline sm:hidden">Map</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </Link>
@@ -216,7 +218,7 @@ export function InvestorDashboard({
       </header>
 
       {/* ── Main Command Center ───────────────────────────────────── */}
-      <main className="flex-1 px-6 sm:px-10 py-8 max-w-7xl mx-auto w-full space-y-10">
+      <main className="flex-1 px-3 sm:px-6 md:px-10 py-6 sm:py-8 max-w-7xl mx-auto w-full space-y-8 sm:space-y-10">
         
         {/* Title & Introduction */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -242,7 +244,7 @@ export function InvestorDashboard({
         </div>
 
         {/* ── LIVE ECOSYSTEM PULSE HERO COUNTERS ────────────────── */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Revenue */}
           <div className="p-5 rounded-3xl bg-[#111312] text-white shadow-lg space-y-2 relative overflow-hidden">
             <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#C8F369]/10 rounded-full blur-xl pointer-events-none" />
@@ -565,20 +567,20 @@ export function InvestorDashboard({
 
       {/* ── DEPLOY COMMUNITY STALL MODAL ───────────────────────── */}
       {showDeployModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-black/10 space-y-6 animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-lg max-h-[88dvh] overflow-y-auto bg-white rounded-3xl p-5 sm:p-8 shadow-2xl border border-black/10 space-y-5 sm:space-y-6 animate-scale-in">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
               <div className="flex items-center gap-2">
                 <PlusCircle className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-lg font-bold text-[#111312]">
+                <h3 className="text-base sm:text-lg font-bold text-[#111312]">
                   Deploy Community Micro-Stall
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDeployModal(false)}
-                className="text-black/40 hover:text-black p-1"
+                className="text-black/40 hover:text-black p-1.5 cursor-pointer rounded-lg hover:bg-black/5"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -633,7 +635,7 @@ export function InvestorDashboard({
                   <label className="block text-xs font-bold text-black/70 mb-1">
                     Hardware Archetype
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
                       { id: "3w_auto", name: "3W Auto Stand", power: "11 kW", capex: "₹1.8L" },
                       { id: "kirana_ac", name: "Kirana Dual AC", power: "22 kW", capex: "₹2.4L" },
@@ -643,7 +645,7 @@ export function InvestorDashboard({
                         key={type.id}
                         type="button"
                         onClick={() => setNewStationArchetype(type.id as any)}
-                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                           newStationArchetype === type.id
                             ? "border-[#111312] bg-[#FAF9F6] shadow-xs ring-1 ring-black"
                             : "border-black/10 hover:border-black/30"

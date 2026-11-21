@@ -348,7 +348,7 @@ export function VehicleManager({
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleBack}
-            className="w-8 h-8 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] shadow-2xs hover:bg-[#F4F3EE] active:scale-95 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] shadow-2xs hover:bg-[#F4F3EE] active:scale-95 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
             aria-label={step > 1 ? "Go to previous step" : "Close vehicle manager"}
           >
             <ArrowLeft size={16} />
@@ -374,7 +374,7 @@ export function VehicleManager({
 
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#525854] hover:text-[#111312] shadow-2xs hover:bg-[#F4F3EE] active:scale-95 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#525854] hover:text-[#111312] shadow-2xs hover:bg-[#F4F3EE] active:scale-95 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
           aria-label="Exit to Home"
         >
           <X size={16} />

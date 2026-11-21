@@ -7,23 +7,23 @@ import { ArrowLeft, ArrowUpRight, Zap, Activity, Users, Settings2 } from "lucide
 
 export default function StationOwnersPage() {
   return (
-    <div className="min-h-screen bg-[#D8DCDE] p-3 sm:p-6 md:p-8 text-[#111312] selection:bg-[#111312] selection:text-white font-sans antialiased">
-      <div className="max-w-5xl mx-auto rounded-[36px] bg-gradient-to-b from-[#E7EAEB] via-[#DEE1E3] to-[#D3D7D9] shadow-[0_30px_90px_rgba(0,0,0,0.12)] border border-white/70 overflow-hidden flex flex-col p-6 sm:p-12">
+    <div className="min-h-screen bg-[#D8DCDE] p-2 sm:p-6 md:p-8 text-[#111312] selection:bg-[#111312] selection:text-white font-sans antialiased">
+      <div className="max-w-5xl mx-auto rounded-[28px] sm:rounded-[36px] bg-gradient-to-b from-[#E7EAEB] via-[#DEE1E3] to-[#D3D7D9] shadow-[0_30px_90px_rgba(0,0,0,0.12)] border border-white/70 overflow-hidden flex flex-col p-4 sm:p-8 md:p-12">
         {/* Navigation Bar */}
-        <div className="flex items-center justify-between pb-8 border-b border-black/[0.06]">
+        <div className="flex items-center justify-between gap-2 pb-6 sm:pb-8 border-b border-black/[0.06]">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-black/60 hover:text-black transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs font-semibold uppercase tracking-wider text-black/60 hover:text-black transition-colors"
           >
             <ArrowLeft size={16} />
             <span>Back to EVverse</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/users"
-              className="bg-[#111312] hover:bg-black text-[#C8F369] font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1.5 transition-all hover:scale-105"
+              className="bg-[#111312] hover:bg-black text-[#C8F369] font-bold text-xs px-3 sm:px-4 py-2 rounded-full flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
             >
-              <span>Driver Mobile App</span>
+              <span>Driver App</span>
               <ArrowUpRight size={14} />
             </Link>
           </div>

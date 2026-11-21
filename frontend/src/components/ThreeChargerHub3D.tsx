@@ -974,7 +974,7 @@ export function ThreeChargerHub3D({
       // Stream energy particles along active charging cable (Reversed in V2G mode)
       if (energyParticlesRef.current && cableCurveRef.current) {
         const particles = energyParticlesRef.current.children;
-        particles.forEach((p, idx) => {
+        particles.forEach((p: THREE.Object3D, idx: number) => {
           const rawT = (elapsed * 0.7 + idx * 0.16) % 1.0;
           // In V2G mode, reverse the particle stream (1 - rawT) so energy flows from car back to grid!
           const t = isV2GRef.current ? (1.0 - rawT) : rawT;

@@ -205,3 +205,41 @@
   - `npx eslint --quiet` exited with 0 errors across all modified and newly created components.
   - Offline pytest suite passed 53/53 tests in 1.50s.
   - Zero unverified assumptions, simulated financial statistics, or fake tariffs introduced.
+
+---
+
+## Cohort Entry 12: Accurate Device Location Detection & Origin Separation
+**Date:** November 2026 *(Location Precision Sprint)*
+
+- **Objective:** Fix the incorrect location detection issue that placed drivers at central Pune (Shivajinagar/Rasta Peth, [18.5284, 73.8507]) instead of their actual hardware GPS location near Amanora / Magarpatta–Hadapsar (~18.514°–18.518° N, 73.930°–73.935° E), an error of ~9 km caused by coarse GeoIP fallback and hardcoded synthetic city-center offsets.
+- **Root Causes Addressed:**
+  1. `enableHighAccuracy: false` and a 5-second timeout in `page.tsx` forced browsers to use coarse GeoIP resolution, which resolves to telecom gateway IP addresses in central Pune.
+  2. Initial `userLocation` state was hardcoded to `[cityConfig.lat + 0.008, cityConfig.lng - 0.006]`.
+  3. City selector changes wiped out acquired GPS coordinates by setting `setUserLocation` during render.
+  4. Navigation was initiated before GPS watcher callbacks delivered the first accurate coordinate fix, causing OSRM to generate routes from the city center.
+  5. Leaflet map rendered a pulsing driver marker at the fallback coordinates even when real GPS was absent.
+  6. JourneyPlanner submitted synthetic city-center coordinates to the backend prediction engine without distinguishing real GPS from fallback.
+- **Implementation Details:**
+  - `frontend/src/app/users/stations/page.tsx`:
+    - Separated location state into `deviceLocation` (`[number, number] | null`), `deviceAccuracy` (`number | null`), and `locationStatus` (`'prompt' | 'detecting' | 'precise' | 'approximate' | 'denied' | 'unavailable' | 'timeout' | 'unsupported'`).
+    - Derived `fallbackLocation` strictly from selected city coordinates, and `userLocation` as `deviceLocation || fallbackLocation`.
+    - Implemented two-tier geolocation acquisition: primary attempt with `enableHighAccuracy: true`, `timeout: 12000`, `maximumAge: 10000`, falling back to lower-constraint acquisition on timeout or position unavailability.
+    - Added Permissions API query and `onchange` listener on mount to react dynamically to user permission grants/revocations.
+    - Decoupled city catalog switching from device location: switching cities updates the map center for exploring regional stations but never overwrites genuine device GPS.
+    - Updated `startRoadNavigation`: verifies device coordinates exist before requesting OSRM route; if missing, awaits a high-accuracy one-shot fix with 10s timeout, halting with clear error feedback if denied.
+    - Added location status feedback banners in the Explore tab top dock for detecting, denied, and weak signal states, with explicit `[Retry]` buttons.
+    - Added watcher cleanup on unmount to prevent background GPS battery drain.
+  - `frontend/src/components/DriverMobileMap.tsx`:
+    - Updated props to accept `deviceLocation`, `deviceAccuracy`, `locationStatus`, and `onAcquireLocation`.
+    - Modified marker rendering to suppress the pulsing driver dot when `driverLocation || deviceLocation` is `null`, preventing misleading pins at city-center fallbacks.
+    - Enhanced the crosshair button: centers directly on device GPS at zoom 15 if acquired, or triggers `onAcquireLocation()` if permission is needed.
+  - `frontend/src/components/driver/JourneyPlanner.tsx`:
+    - Added a dedicated "Departure Origin" card showing real GPS coordinates with accuracy badge (`±Xm`), or explicit prompt to acquire GPS.
+    - Added explicit user choice to "Use {selectedCity} Center (Approximate)" if device GPS is unavailable.
+    - Prevented silent API submission with synthetic coordinates: trips are evaluated against verified device origins.
+    - Updated the "Start Journey" CTA button to require a valid origin before starting navigation.
+- **Verification:**
+  - TypeScript compiler (`node frontend/node_modules/typescript/bin/tsc --noEmit`): 0 errors.
+  - ESLint (`eslint --quiet` on modified files): 0 errors.
+  - React 19 compliance: zero synchronous setState in effects (`requestAnimationFrame` applied).
+  - Preserved all existing OSRM routing, multi-leg charging waypoints, and physics consumption algorithms.

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, MapPin, Navigation, UserRound } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin, Navigation, UserRound, CheckCircle2, AlertTriangle, Zap, BatteryCharging } from "lucide-react";
 import type { EVVehicle } from "./VehicleCockpit";
 import type {
   JourneyAnalysis,
@@ -90,8 +90,8 @@ function Segmented<T extends string | number>({
           type="button"
           aria-pressed={value === o.v}
           onClick={() => onChange(o.v)}
-          className={`px-3 py-1.5 rounded-full text-xs border cursor-pointer transition-colors ${
-            value === o.v ? "bg-[#111312] text-white border-[#111312]" : "bg-white border-black/10 text-[#111312]"
+          className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all active:scale-95 ${
+            value === o.v ? "bg-[#111312] text-white border-[#111312] shadow-2xs font-semibold" : "bg-white border-black/10 text-[#111312] hover:bg-[#FAF9F6]"
           }`}
         >
           {o.t}
@@ -418,15 +418,15 @@ export function JourneyPlanner({
           <h2 className="text-base font-semibold">Where to?</h2>
           <span className="text-xs text-[#767D78]">{activeVehicle.make} {activeVehicle.model}</span>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar touch-pan-x">
           {corridors.map((d) => (
             <button
               key={d.id}
               type="button"
               aria-pressed={destination.id === d.id}
               onClick={() => setDestId(d.id)}
-              className={`shrink-0 px-3.5 py-2 rounded-2xl border text-left cursor-pointer ${
-                destination.id === d.id ? "bg-[#111312] text-white border-[#111312]" : "bg-white border-black/[0.08]"
+              className={`shrink-0 min-h-[44px] px-3.5 py-2 rounded-2xl border text-left cursor-pointer transition-all active:scale-98 ${
+                destination.id === d.id ? "bg-[#111312] text-white border-[#111312] shadow-2xs" : "bg-white border-black/[0.08] hover:bg-[#FAF9F6]"
               }`}
             >
               <div className="text-sm font-medium flex items-center gap-1.5"><MapPin size={13} />{d.name}</div>
@@ -532,24 +532,62 @@ export function JourneyPlanner({
 
         {analysis && option && (
           <div className={`space-y-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
-            <div>
-              <h3 className={`text-xl font-semibold ${tone}`}>{analysis.headline}</h3>
-              <p className="text-sm text-[#3B403D] mt-1">{analysis.detail}</p>
-            </div>
-
-            {/* Battery story */}
-            {showArrival && (
-              <div>
-                <div className="relative h-2.5 rounded-full bg-black/[0.07] overflow-hidden">
-                  <div className="absolute inset-y-0 left-0 bg-[#111312]/80 rounded-full" style={{ width: `${Math.max(0, Math.min(100, arrivalPct))}%` }} />
-                  <div className="absolute inset-y-0 w-0.5 bg-[#B45309]" style={{ left: `${reserve}%` }} title="Your reserve" />
-                </div>
-                <div className="flex justify-between text-[11px] text-[#767D78] mt-1.5">
-                  <span>Leave with {Math.round(battery)}%</span>
-                  <span>Arrive with about {Math.round(arrivalPct)}%{option.charging_stops.length ? " after charging" : ""}</span>
-                </div>
+            <div className="p-4 rounded-2xl bg-white border border-black/[0.08] shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#767D78] font-bold">
+                  Will I Make It?
+                </span>
+                {analysis.verdict === "SAFE" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC]">
+                    <CheckCircle2 size={13} aria-hidden="true" />
+                    <span>Safe to Drive</span>
+                  </span>
+                ) : analysis.verdict === "CAUTION" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
+                    <AlertTriangle size={13} aria-hidden="true" />
+                    <span>Caution Advised</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FEE2E2] text-[#B91C1C] border border-[#FCA5A5]">
+                    <Zap size={13} aria-hidden="true" />
+                    <span>Charging Needed</span>
+                  </span>
+                )}
               </div>
-            )}
+
+              <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${tone}`}>{analysis.headline}</h3>
+              <p className="text-xs sm:text-sm text-[#3B403D] leading-snug">{analysis.detail}</p>
+
+              {/* Battery story */}
+              {showArrival && (
+                <div className="pt-2">
+                  <div className="relative h-3 rounded-full bg-black/[0.07] overflow-hidden">
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${
+                        arrivalPct > reserve
+                          ? "bg-[#16A34A]"
+                          : arrivalPct > 0
+                          ? "bg-[#D97706]"
+                          : "bg-[#DC2626]"
+                      }`}
+                      style={{ width: `${Math.max(4, Math.min(100, arrivalPct))}%` }}
+                    />
+                    <div
+                      className="absolute inset-y-0 w-0.5 bg-[#B45309] z-10"
+                      style={{ left: `${reserve}%` }}
+                      title={`Target reserve: ${reserve}%`}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-[#767D78] mt-1.5 font-mono">
+                    <span>Departure: {Math.round(battery)}%</span>
+                    <span className="font-semibold text-[#111312]">
+                      Arrival: ~{Math.round(arrivalPct)}%
+                      {option.charging_stops.length ? " (with charge)" : ""}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Option switcher + the one explanation */}
             <div className="rounded-2xl bg-white border border-black/[0.08] p-4 space-y-3">
@@ -652,9 +690,10 @@ export function JourneyPlanner({
               type="button"
               onClick={start}
               disabled={busy || (option.verdict === "CHARGING_NEEDED" && option.charging_stops.length === 0)}
-              className="w-full rounded-2xl bg-[#111312] text-white py-3.5 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full min-h-[50px] rounded-2xl bg-[#111312] text-white py-3.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2"
             >
-              {option.charging_stops.length && chosenStop ? `Start · via ${chosenStop.name}` : `Start to ${destination.name}`}
+              <Navigation size={15} className="text-[#C8F369]" aria-hidden="true" />
+              <span>{option.charging_stops.length && chosenStop ? `Start · via ${chosenStop.name}` : `Start to ${destination.name}`}</span>
             </button>
             {option.verdict === "CHARGING_NEEDED" && option.charging_stops.length === 0 && (
               <p className="text-[11px] text-[#767D78] text-center">Starting is disabled until the journey is achievable.</p>

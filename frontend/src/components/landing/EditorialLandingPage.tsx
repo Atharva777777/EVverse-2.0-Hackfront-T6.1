@@ -101,9 +101,9 @@ export function EditorialLandingPage({
       <div className="relative w-full max-w-[1400px] mx-auto rounded-[36px] sm:rounded-[44px] md:rounded-[52px] bg-gradient-to-b from-[#E7EAEB] via-[#DEE1E3] to-[#D3D7D9] shadow-[0_30px_90px_rgba(0,0,0,0.12)] border border-white/70 overflow-hidden flex flex-col">
         
         {/* ── Top Header: Minimal Glyph & Navigation ── */}
-        <header className="relative z-40 w-full px-6 sm:px-12 py-6 sm:py-8 flex items-center justify-between border-b border-black/[0.04]">
+        <header className="relative z-40 w-full px-4 sm:px-12 py-4 sm:py-8 flex items-center justify-between border-b border-black/[0.04]">
           <Link href={routes.home || '/'} className="flex items-center group" aria-label="Home">
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 group-hover:scale-105 transition-transform">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 group-hover:scale-105 transition-transform">
               <Image
                 src={getAsset('/images/evverse-logo.png')}
                 alt="EVverse Logo"
@@ -116,14 +116,14 @@ export function EditorialLandingPage({
           </Link>
 
           {/* Minimal Links */}
-          <nav className="flex items-center gap-4 sm:gap-6 text-xs tracking-wider uppercase font-medium text-black/60">
-            <a href={routes.home || '#hero'} className="hover:text-black transition-colors">
+          <nav className="flex items-center gap-2.5 sm:gap-6 text-xs tracking-wider uppercase font-medium text-black/60">
+            <a href={routes.home || '#hero'} className="hidden md:inline-block hover:text-black transition-colors">
               Home
             </a>
-            <a href={routes.howItWorks || '#how-it-works'} className="hover:text-black transition-colors">
+            <a href={routes.howItWorks || '#how-it-works'} className="hidden md:inline-block hover:text-black transition-colors">
               How It Works
             </a>
-            <a href={routes.roles || '#roles'} className="hover:text-black transition-colors">
+            <a href={routes.roles || '#roles'} className="hidden md:inline-block hover:text-black transition-colors">
               Roles
             </a>
             <Link
@@ -181,16 +181,16 @@ export function EditorialLandingPage({
 
           {/* ── Top-Left Callout ── */}
           <div
-            className="absolute top-10 left-6 sm:left-12 z-20 space-y-1 max-w-[200px] sm:max-w-xs transition-opacity duration-200"
+            className="absolute top-6 left-4 sm:top-10 sm:left-12 z-20 space-y-1 max-w-[170px] sm:max-w-xs transition-opacity duration-200"
             style={{ opacity: Math.max(0.2, 1 - scrollY / 260) }}
           >
-            <span className="text-xs font-mono uppercase tracking-widest text-black/45 block">
+            <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-black/45 block">
               Fast and Secure
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111312]">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-[#111312]">
               Next-Gen Power
             </h1>
-            <p className="text-xs text-black/55 pt-1">
+            <p className="text-[11px] sm:text-xs text-black/55 pt-0.5 sm:pt-1">
               Guaranteed charging spots. Zero wait time.
             </p>
           </div>
@@ -249,13 +249,13 @@ export function EditorialLandingPage({
 
           {/* ── Bottom-Right Manifesto Text ── */}
           <div
-            className="absolute bottom-12 right-6 sm:right-12 z-20 max-w-[220px] sm:max-w-xs text-right space-y-2 transition-opacity duration-200"
+            className="absolute bottom-10 right-4 sm:bottom-12 sm:right-12 z-20 max-w-[180px] sm:max-w-xs text-right space-y-1.5 sm:space-y-2 transition-opacity duration-200"
             style={{ opacity: Math.max(0.2, 1 - scrollY / 260) }}
           >
-            <p className="text-xs sm:text-sm text-black/65 leading-relaxed">
-              Be part of the transformation in electric vehicles via intelligent network planning for public fast-charging stations.
+            <p className="text-[11px] sm:text-sm text-black/65 leading-snug sm:leading-relaxed">
+              Be part of the transformation in electric vehicles via intelligent network planning.
             </p>
-            <p className="text-[11px] font-mono text-black/40">
+            <p className="text-[10px] sm:text-[11px] font-mono text-black/40">
               800V ARCHITECTURE • ISO 15118
             </p>
           </div>

@@ -10,7 +10,7 @@ import { CITY_CONFIGS } from "@/components/CountryCitySelector";
 import type { LiveStation } from "@/types/api";
 
 // Driver Mobile Components
-import { DriverTab } from "@/components/driver/DriverNav";
+import type { DriverTab } from "@/components/driver/DriverNav";
 import { DriverDrawer } from "@/components/driver/DriverDrawer";
 import { VehicleCockpit, EVVehicle } from "@/components/driver/VehicleCockpit";
 import { JourneyPlanner } from "@/components/driver/JourneyPlanner";
@@ -878,7 +878,7 @@ export default function EVVerseDriverPage() {
 
   return (
     <div
-      className={`min-h-screen w-full flex flex-col items-center selection:bg-[#111312] selection:text-white transition-colors duration-300 ${isFramed
+      className={`min-h-screen md:min-h-screen h-[100dvh] md:h-auto w-full flex flex-col items-center selection:bg-[#111312] selection:text-white transition-colors duration-300 ${isFramed
         ? "bg-[#0C0E0D] text-[#111312]"
         : "bg-[#FAF9F6] text-[#111312]"
         }`}
@@ -932,7 +932,7 @@ export default function EVVerseDriverPage() {
           className={
             isFramed
               ? "relative w-[424px] max-w-full h-[866px] rounded-[56px] p-[10px] flex flex-col select-none"
-              : "w-full max-w-[430px] min-h-screen flex flex-col relative bg-[#FAF9F6] shadow-2xl border-x border-[rgba(17,19,18,0.06)]"
+              : "w-full max-w-[430px] h-[100dvh] max-h-[100dvh] flex flex-col relative bg-[#FAF9F6] shadow-2xl border-x border-[rgba(17,19,18,0.06)] overflow-hidden"
           }
           style={
             isFramed
@@ -1156,6 +1156,7 @@ export default function EVVerseDriverPage() {
 
                   <button
                     type="button"
+                    id="driver-menu-button"
                     onClick={() => setIsDrawerOpen(true)}
                     className="w-9 h-9 rounded-xl bg-white border border-black/[0.08] flex items-center justify-center text-[#111312] hover:bg-[#F2EFE9] active:scale-95 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
                     aria-label="Open navigation menu"
@@ -1200,7 +1201,7 @@ export default function EVVerseDriverPage() {
 
                 {/* ═════════ TAB 2: EXPLORE (Charging Map) ═════════ */}
                 {activeTab === "explore" && (
-                  <div className="flex-1 flex flex-col relative w-full h-full min-h-[500px]">
+                  <div className="flex-1 flex flex-col relative w-full h-full min-h-0">
                     {/* Interactive Leaflet Map Viewport */}
                     <div className="flex-1 relative w-full h-full">
                       <DriverMobileMap
@@ -1404,14 +1405,14 @@ export default function EVVerseDriverPage() {
 
                       {/* Empty State Overlay when 0 stations found */}
                       {filteredStations.length === 0 && !loading && (
-                        <div className="absolute inset-x-3 bottom-20 z-20">
+                        <div className="absolute inset-x-3 bottom-4 z-20">
                           <EmptyState onReset={handleResetFilters} />
                         </div>
                       )}
 
                       {/* Bottom Quick Hubs Drawer / Peek Card */}
                       {!isStationDetailOpen && !isNavigating && filteredStations.length > 0 && (
-                        <div className="absolute bottom-16 left-3 right-3 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
+                        <div className="absolute bottom-3 left-3 right-3 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-[rgba(17,19,18,0.08)] shadow-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C938E] font-semibold">
                               {filteredStations.length} Charging Stations

@@ -6,6 +6,7 @@ import {
   Compass,
   Navigation,
   Zap,
+  User,
 } from "lucide-react";
 
 export type DriverTab = "home" | "explore" | "journeys" | "charging" | "profile" | "garage";
@@ -28,6 +29,7 @@ export function DriverNav({
     { id: "explore", label: "Explore", icon: Compass },
     { id: "journeys", label: "Journeys", icon: Navigation },
     { id: "charging", label: "Charging", icon: Zap },
+    { id: "profile", label: "Profile", icon: User },
   ];
 
   return (
