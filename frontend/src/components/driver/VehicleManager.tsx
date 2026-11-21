@@ -147,7 +147,7 @@ export function VehicleManager({
     setIsCustomMode(false);
     setConfigBatteryPct(80);
     setConfigNickname("");
-    setConfigVin(item.vin || `EV${Date.now().toString().slice(-6)}`);
+    setConfigVin(item.vin || `EV-${item.model.replace(/\s+/g, '').toUpperCase().slice(0, 4)}-01`);
     setValidationErrors({});
     setStep(2);
   };

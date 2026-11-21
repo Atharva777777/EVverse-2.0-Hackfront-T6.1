@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: evverse-backend
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: OPEN_CHARGE_MAP_API_KEY
+        sync: false          # set in Render dashboard — optional but recommended
+      - key: SARVAM_API_KEY
+        sync: false          # set in Render dashboard — optional (AI features degrade gracefully)
+      - key: DRIVER_DB_PATH
+        value: /var/data/driver.db  # remove this line if NOT attaching a Render Disk
+      # --- Monad blockchain (optional; booking/payment only) ---
+      - key: ALCHEMY_API_KEY
+        sync: false
+      - key: MONAD_PAYMENT_RECIPIENT_ADDRESS
+        sync: false

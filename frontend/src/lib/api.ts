@@ -13,18 +13,26 @@ import type {
 import { getMockOptimizeData } from "./mockData";
 
 export function getApiBaseUrl(): string {
-  // If running on server functions (SSR / Server Actions / Route Handlers), use Vercel service binding
+  // 1. Explicit environment variable overrides
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
+  }
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.trim().replace(/\/+$/, "");
+  }
+
+  // 2. Server-side Vercel service binding (SSR / Server Actions)
   if (typeof window === "undefined" && process.env.BACKEND_URL) {
     return process.env.BACKEND_URL.trim().replace(/\/+$/, "");
   }
 
-  // Client-side in browser or explicit environment variable override
-  const rawBaseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    (typeof window !== "undefined" ? "" : "http://localhost:8001");
+  // 3. Client-side production deployment (relative URL works with Vercel rewrites)
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+    return "";
+  }
 
-  return rawBaseUrl.trim().replace(/\/+$/, "");
+  // 4. Default for local development (FastAPI running on port 8000)
+  return "http://localhost:8000";
 }
 
 export const BASE_URL = getApiBaseUrl();

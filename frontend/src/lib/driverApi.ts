@@ -63,7 +63,9 @@ export async function driverRequest<T>(
     headers["X-Driver-Token"] = token;
   }
 
-  const url = `${BASE_URL}${path}`;
+  const baseUrl = getApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
   let response: Response;
 
   try {
