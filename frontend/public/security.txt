@@ -1,0 +1,8 @@
+# EV Verse Security Disclosure Policy
+# Compliant with RFC 9116
+Contact: mailto:security@evverse.app
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://quant-ev.vercel.app/.well-known/security.txt
+Policy: https://quant-ev.vercel.app/security
+Acknowledgments: https://quant-ev.vercel.app/acknowledgments

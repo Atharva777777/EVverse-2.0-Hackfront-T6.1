@@ -14,7 +14,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.30.0",
     "maplibre-gl": "^6.13.0",
-    "next": "16.3.0",
+    "next": "^16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.187.0"
@@ -25,7 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0",
+    "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
