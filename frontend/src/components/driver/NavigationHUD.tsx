@@ -63,16 +63,16 @@ export function NavigationHUD({
   // Maneuver icon helper
   const renderManeuverIcon = (type: string, modifier?: string) => {
     const mod = (modifier || "").toLowerCase();
-    if (type === "arrive") return <Flag size={20} className="text-[#C8F369]" />;
+    if (type === "arrive") return <Flag size={20} className="text-[#38BDF8]" />;
     if (type === "roundabout" || type === "rotary")
-      return <RotateCw size={20} className="text-[#C8F369]" />;
+      return <RotateCw size={20} className="text-[#38BDF8]" />;
     if (type === "fork" || type === "merge")
-      return <Split size={20} className="text-[#C8F369]" />;
+      return <Split size={20} className="text-[#38BDF8]" />;
     if (mod.includes("left"))
-      return <CornerUpLeft size={20} className="text-[#C8F369]" />;
+      return <CornerUpLeft size={20} className="text-[#38BDF8]" />;
     if (mod.includes("right"))
-      return <CornerUpRight size={20} className="text-[#C8F369]" />;
-    return <ArrowUp size={20} className="text-[#C8F369]" />;
+      return <CornerUpRight size={20} className="text-[#38BDF8]" />;
+    return <ArrowUp size={20} className="text-[#38BDF8]" />;
   };
 
   return (
@@ -86,8 +86,8 @@ export function NavigationHUD({
             <div className="flex items-center gap-2">
               {/* GPS Live vs Preview Status */}
               {gpsStatus === "active" ? (
-                <span className="flex items-center gap-1.5 text-[#C8F369] font-bold">
-                  <span className="w-2 h-2 rounded-full bg-[#C8F369] animate-ping" />
+                <span className="flex items-center gap-1.5 text-[#38BDF8] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-ping" />
                   GPS ACTIVE
                 </span>
               ) : (
@@ -101,7 +101,7 @@ export function NavigationHUD({
               {isMultiLeg && (
                 <span className="bg-white/10 px-2 py-0.5 rounded text-[9.5px] font-bold text-[#E2E5DF]">
                   {currentLeg.isChargingWaypoint ? (
-                    <span className="text-[#C8F369]">LEG 1: CHARGING STOP</span>
+                    <span className="text-[#34D399]">LEG 1: CHARGING STOP</span>
                   ) : (
                     <span>LEG 2: FINAL DESTINATION</span>
                   )}
@@ -124,11 +124,11 @@ export function NavigationHUD({
             <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
               {currentManeuver
                 ? renderManeuverIcon(currentManeuver.type, currentManeuver.modifier)
-                : <Navigation size={20} className="text-[#C8F369]" />}
+                : <Navigation size={20} className="text-[#38BDF8]" />}
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-mono font-bold text-[#C8F369] uppercase tracking-wider">
+              <div className="text-[11px] font-mono font-bold text-[#38BDF8] uppercase tracking-wider">
                 {distanceToCurrentStep > 35
                   ? `In ${formatManeuverDistance(distanceToCurrentStep)}`
                   : "Now"}

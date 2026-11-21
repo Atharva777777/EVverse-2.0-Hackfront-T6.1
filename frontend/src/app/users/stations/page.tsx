@@ -1026,7 +1026,7 @@ export default function EVVerseDriverPage() {
                   {/* Hyperrealistic Dynamic Island - EXACT HORIZONTAL CENTER */}
                   <div
                     className={`absolute left-1/2 -translate-x-1/2 top-1.5 transition-all duration-300 h-7 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md z-20 ${isCharging
-                      ? "w-48 bg-black text-[#C8F369]"
+                      ? "w-48 bg-black text-[#34D399]"
                       : isNavigating
                         ? "w-44 bg-black text-white"
                         : "w-24 bg-black"
@@ -1035,7 +1035,7 @@ export default function EVVerseDriverPage() {
                     {isCharging ? (
                       <>
                         <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold">
-                          <Zap size={11} className="text-[#C8F369] animate-pulse" />
+                          <Zap size={11} className="text-[#34D399] animate-pulse" />
                           <span>+{chargeCurrentKw} kW</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -1047,11 +1047,11 @@ export default function EVVerseDriverPage() {
                       </>
                     ) : isNavigating && activeRoute ? (
                       <>
-                        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#C8F369]">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#38BDF8]">
                           <Navigation size={11} />
                           <span>{activeRoute.legs[activeLegIndex]?.distanceKm || activeRoute.totalDistanceKm} km</span>
                         </div>
-                        <div className="w-2 h-2 rounded-full bg-[#C8F369] animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse" />
                       </>
                     ) : (
                       <>
@@ -1279,9 +1279,9 @@ export default function EVVerseDriverPage() {
                             <button
                               type="button"
                               onClick={() => setActiveTab("journeys")}
-                              className="px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center gap-1.5 bg-[#111312] text-[#C8F369] hover:bg-[#252826] shrink-0 focus-visible:outline-2 focus-visible:outline-[#111312]"
+                              className="px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-xs active:scale-95 cursor-pointer flex items-center gap-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white shrink-0 focus-visible:outline-2 focus-visible:outline-[#0284C7]"
                             >
-                              <Gauge size={13} className="text-[#C8F369]" />
+                              <Gauge size={13} className="text-white" />
                               <span>Will I Make It?</span>
                             </button>
 
@@ -1299,9 +1299,9 @@ export default function EVVerseDriverPage() {
                                   key={f.id}
                                   onClick={() => setSpeedFilter(f.id)}
                                   aria-pressed={isActive}
-                                  className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${isActive
-                                    ? "bg-[#111312] text-white"
-                                    : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
+                                  className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#0284C7] ${isActive
+                                    ? "bg-[#E0F2FE] text-[#0369A1] border border-[#0284C7]"
+                                    : "bg-white/95 backdrop-blur-md text-slate-700 border border-slate-200 hover:bg-slate-50"
                                     }`}
                                 >
                                   {f.label}
@@ -1319,9 +1319,9 @@ export default function EVVerseDriverPage() {
                                 }
                               }}
                               aria-pressed={onlyCompatible || autoCompatibility}
-                              className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#111312] ${onlyCompatible || autoCompatibility
-                                ? "bg-[#111312] text-[#C8F369]"
-                                : "bg-white/95 backdrop-blur-md text-[#525854] border border-[rgba(17,19,18,0.08)] hover:bg-[#F3F2ED]"
+                              className={`px-3.5 py-2 min-h-[38px] rounded-full text-[11px] font-semibold whitespace-nowrap transition-all shadow-2xs active:scale-95 cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[#16A34A] ${onlyCompatible || autoCompatibility
+                                ? "bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC]"
+                                : "bg-white/95 backdrop-blur-md text-slate-700 border border-slate-200 hover:bg-slate-50"
                                 }`}
                             >
                               Compatible ({activeVehicle.plugType.split(" ")[0]})
@@ -1483,9 +1483,9 @@ export default function EVVerseDriverPage() {
                                     startNavigation(filteredStations[0]);
                                   }}
                                   aria-label={`Start navigation to ${filteredStations[0].name}`}
-                                  className="min-h-[40px] px-3.5 py-2 bg-[#111312] text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs hover:bg-[#252826] active:scale-95 shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+                                  className="min-h-[40px] px-3.5 py-2 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs active:scale-95 shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0284C7]"
                                 >
-                                  <Navigation size={12} className="text-[#C8F369]" aria-hidden="true" />
+                                  <Navigation size={12} className="text-white fill-white/20" aria-hidden="true" />
                                   Route
                                 </button>
                               </div>

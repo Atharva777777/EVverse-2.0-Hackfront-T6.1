@@ -21,10 +21,10 @@ export default function StationOwnersPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/users"
-              className="bg-[#111312] hover:bg-black text-[#C8F369] font-bold text-xs px-3 sm:px-4 py-2 rounded-full flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+              className="bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-1.5 shadow-xs transition-all active:scale-95 shrink-0"
             >
               <span>Driver App</span>
-              <ArrowUpRight size={14} />
+              <ArrowUpRight size={14} className="text-white" />
             </Link>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function StationOwnersPage() {
         {/* Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
           <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-black/[0.06] shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-[#111312] text-[#C8F369] flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-xl bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD] flex items-center justify-center mb-4 shadow-2xs">
               <Activity size={20} />
             </div>
             <h3 className="text-lg font-bold text-[#111312] mb-1">Live Bay Telemetry</h3>
@@ -69,7 +69,7 @@ export default function StationOwnersPage() {
           </div>
 
           <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-black/[0.06] shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-[#111312] text-[#C8F369] flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-xl bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD] flex items-center justify-center mb-4 shadow-2xs">
               <Users size={20} />
             </div>
             <h3 className="text-lg font-bold text-[#111312] mb-1">Guaranteed Driver Flow</h3>
@@ -79,7 +79,7 @@ export default function StationOwnersPage() {
           </div>
 
           <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-black/[0.06] shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-[#111312] text-[#C8F369] flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-xl bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD] flex items-center justify-center mb-4 shadow-2xs">
               <Settings2 size={20} />
             </div>
             <h3 className="text-lg font-bold text-[#111312] mb-1">Dynamic Tariff Control</h3>
@@ -90,17 +90,17 @@ export default function StationOwnersPage() {
         </div>
 
         {/* CTA Banner */}
-        <div className="mt-10 p-6 rounded-2xl bg-[#111312] text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-10 p-6 rounded-2xl bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] border border-white/10 shadow-lg text-white flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h4 className="text-base font-bold text-white">See Your Station in the Driver App</h4>
-            <p className="text-xs text-white/70">Test the driver experience and explore station discovery across Pune & Mumbai.</p>
+            <p className="text-xs text-slate-300">Test the driver experience and explore station discovery across Pune &amp; Mumbai.</p>
           </div>
           <Link
             href="/users"
-            className="px-5 py-2.5 rounded-full bg-[#C8F369] text-[#111312] font-bold text-xs flex items-center gap-1.5 hover:bg-white transition-colors shrink-0"
+            className="px-5 py-2.5 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_10px_rgba(2,132,199,0.3)] transition-all shrink-0"
           >
             <span>Launch Driver App</span>
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={14} className="text-white" />
           </Link>
         </div>
       </div>

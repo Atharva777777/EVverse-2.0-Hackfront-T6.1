@@ -524,7 +524,7 @@ export function VehicleManager({
                                 {v.make} {v.model}
                               </h2>
                               {isActive && (
-                                <span className="text-[9px] font-mono font-bold bg-[#111312] text-[#C8F369] px-1.5 py-0.2 rounded shrink-0">
+                                <span className="text-[9px] font-mono font-bold bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC] px-1.5 py-0.2 rounded shrink-0">
                                   ACTIVE
                                 </span>
                               )}
@@ -554,7 +554,7 @@ export function VehicleManager({
                                   setStep(1);
                                 }, 1000);
                               }}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-white bg-[#111312] hover:bg-[#252826] rounded-lg shadow-2xs"
+                              className="px-2.5 py-1 text-[11px] font-semibold text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg shadow-2xs transition-all active:scale-95"
                             >
                               Activate
                             </button>
@@ -739,7 +739,7 @@ export function VehicleManager({
             <div className="space-y-2 pt-1">
               <button
                 onClick={handleProceedToConfigure}
-                className="w-full py-3 px-4 bg-[#111312] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm hover:bg-[#252826] active:scale-[0.98] transition-all cursor-pointer"
+                className="w-full py-3 px-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Configure Vehicle &amp; Battery SoC</span>
                 <ChevronRight size={14} />
@@ -989,9 +989,9 @@ export function VehicleManager({
             <div className="space-y-2 pt-1">
               <button
                 onClick={handleSaveAndActivate}
-                className="w-full py-3 px-4 bg-[#111312] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm hover:bg-[#252826] active:scale-[0.98] transition-all cursor-pointer"
+                className="w-full py-3 px-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
               >
-                <Check size={15} className="text-[#C8F369]" />
+                <Check size={15} className="text-white" />
                 <span>Save &amp; Activate as Primary EV</span>
               </button>
 
@@ -1028,7 +1028,7 @@ export function VehicleManager({
                   onClose();
                   setStep(1);
                 }}
-                className="px-6 py-2.5 bg-[#111312] text-white rounded-xl text-xs font-bold hover:bg-[#252826] shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 Return to Cockpit
               </button>

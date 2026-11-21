@@ -105,7 +105,7 @@ export function ChargingConsole({
   const isTargetReached = currentBatteryPct >= targetLimit;
 
   return (
-    <div className="space-y-3.5 pb-20 max-w-lg mx-auto w-full">
+    <div className="space-y-3.5 pb-8 max-w-lg mx-auto w-full">
       {/* ── Target Reached Notification ────────────────────────────── */}
       {isTargetReached && (
         <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-2xl p-3.5 flex items-center justify-between text-xs animate-in fade-in duration-200">
@@ -127,7 +127,7 @@ export function ChargingConsole({
         {isCharging && (
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full pointer-events-none opacity-20 blur-3xl animate-pulse"
-            style={{ background: "#C8F369" }}
+            style={{ background: "#16A34A" }}
           />
         )}
 
@@ -152,13 +152,13 @@ export function ChargingConsole({
           <div
             className={`px-3 py-1 rounded-full text-[10.5px] font-semibold flex items-center gap-1.5 transition-colors ${
               isCharging
-                ? "bg-[#111312] text-[#C8F369] border border-[#111312]"
+                ? "bg-[#DCFCE7] text-[#15803D] border border-[#86EFAC]"
                 : "bg-[#F4F3EE] text-[#525854] border border-black/[0.05]"
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                isCharging ? "bg-[#C8F369] animate-ping" : "bg-[#9CA3AF]"
+                isCharging ? "bg-[#16A34A] animate-ping" : "bg-[#9CA3AF]"
               }`}
             />
             {isCharging ? "CHARGING" : "STANDBY"}
@@ -217,7 +217,7 @@ export function ChargingConsole({
               Target: {targetLimit}%
             </div>
             {isCharging && (
-              <div className="text-[10px] font-bold text-[#111312] mt-1 bg-[#C8F369] px-2 py-0.5 rounded-full shadow-2xs font-mono">
+              <div className="text-[10px] font-bold text-[#15803D] mt-1 bg-[#DCFCE7] border border-[#86EFAC] px-2 py-0.5 rounded-full shadow-2xs font-mono">
                 +{currentKw} kW DC
               </div>
             )}
@@ -290,7 +290,7 @@ export function ChargingConsole({
             aria-valuemin={50}
             aria-valuemax={100}
             aria-valuenow={targetLimit}
-            className="w-full accent-[#111312] cursor-pointer h-2 bg-[#EAE8E2] rounded-lg appearance-none"
+            className="w-full accent-[#0284C7] cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none"
           />
 
           <div className="grid grid-cols-2 gap-2 pt-0.5">
@@ -299,8 +299,8 @@ export function ChargingConsole({
               onClick={() => setTargetLimit(80)}
               className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-mono transition-colors border cursor-pointer flex flex-col items-center justify-center ${
                 targetLimit === 80
-                  ? "bg-[#111312] text-white border-[#111312] font-bold"
-                  : "bg-white text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
+                  ? "bg-[#E0F2FE] text-[#0369A1] border-[#0284C7] font-bold shadow-2xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               <span>80%</span>
@@ -311,8 +311,8 @@ export function ChargingConsole({
               onClick={() => setTargetLimit(100)}
               className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-mono transition-colors border cursor-pointer flex flex-col items-center justify-center ${
                 targetLimit === 100
-                  ? "bg-[#111312] text-white border-[#111312] font-bold"
-                  : "bg-white text-[#525854] border-black/[0.06] hover:bg-[#F4F3EE]"
+                  ? "bg-[#E0F2FE] text-[#0369A1] border-[#0284C7] font-bold shadow-2xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               <span>100%</span>
@@ -353,7 +353,7 @@ export function ChargingConsole({
           <button
             type="button"
             onClick={onStopCharge}
-            className="w-full min-h-[48px] py-3.5 bg-[#111312] text-[#C8F369] font-bold text-xs rounded-2xl hover:bg-[#252826] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+            className="w-full min-h-[48px] py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-2xl active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-rose-600"
           >
             <Power size={14} aria-hidden="true" />
             <span>Stop Charging &amp; Get Receipt</span>
@@ -362,9 +362,9 @@ export function ChargingConsole({
           <button
             type="button"
             onClick={onStartCharge}
-            className="w-full min-h-[48px] py-3.5 bg-[#111312] text-white font-bold text-xs rounded-2xl hover:bg-[#252826] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+            className="w-full min-h-[50px] py-3.5 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs rounded-2xl active:scale-98 transition-all flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(2,132,199,0.3)] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0284C7]"
           >
-            <Zap size={14} className="text-[#C8F369]" aria-hidden="true" />
+            <Zap size={14} className="text-white fill-white/20" aria-hidden="true" />
             <span>
               Start Charging ({Math.min(vehicle.maxDcSpeedKw, chargeStation?.power_kw || 150)} kW)
             </span>
@@ -475,7 +475,7 @@ export function ChargingConsole({
             </button>
 
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#C8F369] flex items-center justify-center text-[#111312]">
+              <div className="w-9 h-9 rounded-full bg-[#DCFCE7] border border-[#86EFAC] flex items-center justify-center text-[#15803D]">
                 <CheckCircle2 size={18} aria-hidden="true" />
               </div>
               <div className="flex-1">
@@ -530,7 +530,7 @@ export function ChargingConsole({
             <button
               type="button"
               onClick={onCloseReceiptModal}
-              className="w-full min-h-[44px] py-3 bg-[#111312] text-white text-xs font-semibold rounded-2xl hover:bg-[#252826] active:scale-98 transition-all cursor-pointer"
+              className="w-full min-h-[44px] py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-semibold rounded-2xl shadow-xs active:scale-98 transition-all cursor-pointer"
             >
               Done
             </button>

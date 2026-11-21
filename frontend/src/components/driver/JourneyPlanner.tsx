@@ -90,8 +90,10 @@ function Segmented<T extends string | number>({
           type="button"
           aria-pressed={value === o.v}
           onClick={() => onChange(o.v)}
-          className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all active:scale-95 ${
-            value === o.v ? "bg-[#111312] text-white border-[#111312] shadow-2xs font-semibold" : "bg-white border-black/10 text-[#111312] hover:bg-[#FAF9F6]"
+          className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all active:scale-95 ${
+            value === o.v
+              ? "bg-[#E0F2FE] text-[#0369A1] border-[#0284C7] shadow-2xs ring-1 ring-[#0284C7]/20"
+              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-medium"
           }`}
         >
           {o.t}
@@ -109,19 +111,23 @@ function StopCard({ stop, chosen, onChoose }: { stop: JourneyStop; chosen: boole
         ? `~${stop.assumed_power_kw.toFixed(0)} kW (unverified)`
         : "Power not listed";
   return (
-    <div className={`rounded-2xl border p-4 bg-white ${chosen ? "border-[#111312]" : "border-black/[0.08]"}`}>
+    <div className={`rounded-2xl border p-4 bg-white transition-all ${chosen ? "border-[#0284C7] shadow-xs" : "border-slate-200"}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-[#767D78]">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">
             {stop.role === "primary" ? "Charging stop" : "Backup"}
           </div>
-          <div className="text-sm font-semibold mt-0.5">{stop.name}</div>
+          <div className="text-sm font-semibold text-[#0F172A] mt-0.5">{stop.name}</div>
         </div>
         <button
           type="button"
           onClick={onChoose}
           disabled={chosen}
-          className={`px-3 py-1.5 rounded-full text-xs border shrink-0 ${chosen ? "bg-[#111312] text-white border-[#111312]" : "border-black/10 cursor-pointer"}`}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold border shrink-0 transition-all ${
+            chosen
+              ? "bg-[#0284C7] text-white border-[#0284C7] shadow-2xs"
+              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+          }`}
         >
           {chosen ? "Selected" : "Use this one"}
         </button>
@@ -426,11 +432,18 @@ export function JourneyPlanner({
               aria-pressed={destination.id === d.id}
               onClick={() => setDestId(d.id)}
               className={`shrink-0 min-h-[44px] px-3.5 py-2 rounded-2xl border text-left cursor-pointer transition-all active:scale-98 ${
-                destination.id === d.id ? "bg-[#111312] text-white border-[#111312] shadow-2xs" : "bg-white border-black/[0.08] hover:bg-[#FAF9F6]"
+                destination.id === d.id
+                  ? "bg-[#E0F2FE] text-[#0369A1] border-[#0284C7] shadow-2xs font-semibold ring-1 ring-[#0284C7]/20"
+                  : "bg-white border-slate-200 text-[#0F172A] hover:bg-slate-50 hover:border-slate-300"
               }`}
             >
-              <div className="text-sm font-medium flex items-center gap-1.5"><MapPin size={13} />{d.name}</div>
-              <div className={`text-[11px] ${destination.id === d.id ? "text-white/70" : "text-[#767D78]"}`}>{d.distanceKm} km</div>
+              <div className="text-sm font-semibold flex items-center gap-1.5">
+                <MapPin size={13} className={destination.id === d.id ? "text-[#0284C7]" : "text-slate-400"} />
+                {d.name}
+              </div>
+              <div className={`text-[11px] font-mono mt-0.5 ${destination.id === d.id ? "text-[#0284C7] font-medium" : "text-slate-500"}`}>
+                {d.distanceKm} km
+              </div>
             </button>
           ))}
         </div>
@@ -485,8 +498,19 @@ export function JourneyPlanner({
       {/* 2 · Battery & reserve */}
       <section aria-label="Battery" className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <label htmlFor="battery" className="text-sm font-medium">Battery now</label>
-          <span className="text-2xl font-semibold tabular-nums">{Math.round(battery)}%</span>
+          <label htmlFor="battery" className="text-sm font-semibold text-[#0F172A]">Battery now</label>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold tabular-nums font-mono text-[#0F172A]">{Math.round(battery)}%</span>
+            <div className="w-6 h-3 rounded-[3px] border border-slate-300 p-[1px] relative flex items-center">
+              <div
+                className={`h-full rounded-[1px] transition-all ${
+                  battery > 30 ? "bg-[#16A34A]" : battery > 15 ? "bg-[#F59E0B]" : "bg-[#EF4444]"
+                }`}
+                style={{ width: `${Math.max(5, battery)}%` }}
+              />
+              <div className="absolute -right-[2px] w-[1px] h-1 bg-slate-300 rounded-r-[1px]" />
+            </div>
+          </div>
         </div>
         <input
           id="battery"
@@ -495,7 +519,7 @@ export function JourneyPlanner({
           max={100}
           value={battery}
           onChange={(e) => setBattery(Number(e.target.value))}
-          className="w-full accent-[#111312] cursor-pointer"
+          className="w-full accent-[#16A34A] cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none"
         />
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium">Keep in reserve</span>
@@ -600,7 +624,11 @@ export function JourneyPlanner({
                       aria-selected={o.kind === option.kind}
                       type="button"
                       onClick={() => { setPickedKind(o.kind); setChosenStopId(null); }}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs border cursor-pointer ${o.kind === option.kind ? "bg-[#111312] text-white border-[#111312]" : "border-black/10"}`}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${
+                        o.kind === option.kind
+                          ? "bg-[#E0F2FE] text-[#0369A1] border-[#0284C7] shadow-2xs"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
                     >
                       {o.title}{o.recommended ? " ✓" : ""}
                     </button>
@@ -677,7 +705,11 @@ export function JourneyPlanner({
                   <div key={i} className="flex items-start justify-between gap-3 text-sm">
                     <span className="leading-snug">{r.text}</span>
                     {r.action && (
-                      <button type="button" onClick={() => applyAction(r.action!)} className="shrink-0 px-3 py-1.5 rounded-full text-xs bg-[#111312] text-white cursor-pointer">
+                      <button
+                        type="button"
+                        onClick={() => applyAction(r.action!)}
+                        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold cursor-pointer shadow-xs active:scale-95 transition-all"
+                      >
                         {r.action.label}
                       </button>
                     )}
@@ -690,9 +722,9 @@ export function JourneyPlanner({
               type="button"
               onClick={start}
               disabled={busy || (option.verdict === "CHARGING_NEEDED" && option.charging_stops.length === 0)}
-              className="w-full min-h-[50px] rounded-2xl bg-[#111312] text-white py-3.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full min-h-[52px] rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99] transition-all shadow-[0_4px_14px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2.5"
             >
-              <Navigation size={15} className="text-[#C8F369]" aria-hidden="true" />
+              <Navigation size={16} className="text-white fill-white/20" aria-hidden="true" />
               <span>{option.charging_stops.length && chosenStop ? `Start · via ${chosenStop.name}` : `Start to ${destination.name}`}</span>
             </button>
             {option.verdict === "CHARGING_NEEDED" && option.charging_stops.length === 0 && (

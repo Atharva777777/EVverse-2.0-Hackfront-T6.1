@@ -20,10 +20,10 @@ export default function GuidePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/users"
-              className="bg-[#111312] hover:bg-black text-[#C8F369] font-bold text-xs px-3 sm:px-4 py-2 rounded-full flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+              className="bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-1.5 shadow-xs transition-all active:scale-95 shrink-0"
             >
               <span>Driver App</span>
-              <ArrowUpRight size={14} />
+              <ArrowUpRight size={14} className="text-white" />
             </Link>
           </div>
         </div>
@@ -83,10 +83,10 @@ export default function GuidePage() {
           </div>
           <Link
             href="/users"
-            className="px-5 py-2.5 rounded-full bg-[#C8F369] text-[#111312] font-bold text-xs flex items-center gap-1.5 hover:bg-white transition-colors shrink-0"
+            className="px-5 py-2.5 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_10px_rgba(2,132,199,0.3)] transition-all shrink-0"
           >
             <span>Launch Driver App</span>
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={14} className="text-white" />
           </Link>
         </div>
       </div>

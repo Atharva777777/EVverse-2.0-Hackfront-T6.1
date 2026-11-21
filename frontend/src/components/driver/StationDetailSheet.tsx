@@ -499,18 +499,18 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
             <button
               type="button"
               onClick={() => onStartNavigation(station)}
-              className="flex-1 min-h-[48px] py-3 px-4 bg-[#111312] text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#252826] active:scale-[0.99] transition-all shadow-md cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312]"
+              className="flex-1 min-h-[48px] py-3 px-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition-all shadow-[0_4px_12px_rgba(2,132,199,0.25)] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0284C7]"
             >
-              <Navigation size={15} className="text-[#C8F369]" aria-hidden="true" />
+              <Navigation size={15} className="text-white fill-white/20" aria-hidden="true" />
               <span>Start Navigation</span>
             </button>
 
             <button
               type="button"
               onClick={() => onStartCharging(station)}
-              className="min-h-[48px] py-3 px-4 bg-[#C8F369] text-[#111312] border border-[#111312] rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-[#BCE95D] active:scale-98 transition-all shadow-2xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#111312] shrink-0"
+              className="min-h-[48px] py-3 px-4 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-all shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-[#16A34A] shrink-0"
             >
-              <Zap size={14} aria-hidden="true" />
+              <Zap size={14} aria-hidden="true" className="text-white" />
               <span>Charge</span>
             </button>
           </div>
@@ -623,7 +623,7 @@ export const StationDetailSheet: React.FC<StationDetailSheetProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-[#111312] text-white text-xs font-bold rounded-xl hover:bg-[#252826] cursor-pointer"
+                    className="flex-1 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
                   >
                     Submit Report
                   </button>

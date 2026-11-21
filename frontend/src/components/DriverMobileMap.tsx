@@ -127,12 +127,12 @@ export default function DriverMobileMap({
 
         const userHtml = `
           <div style="position:relative;width:30px;height:30px;transform:translate(-15px,-15px);">
-            <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(200,243,105,0.35);animation:pulse-1 2s infinite;"></div>
-            <div style="position:absolute;inset:0;border-radius:50%;background:#111312;border:3px solid #C8F369;box-shadow:0 3px 12px rgba(17,19,18,0.4);display:flex;align-items:center;justify-content:center;${headingRotation}">
+            <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(2,132,199,0.3);animation:pulse-1 2s infinite;"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:#0284C7;border:3px solid #FFFFFF;box-shadow:0 3px 12px rgba(2,132,199,0.5);display:flex;align-items:center;justify-content:center;${headingRotation}">
               ${
                 hasHeading
-                  ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>`
-                  : `<div style="width:8px;height:8px;border-radius:50%;background:#C8F369;"></div>`
+                  ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>`
+                  : `<div style="width:8px;height:8px;border-radius:50%;background:#FFFFFF;"></div>`
               }
             </div>
           </div>
@@ -153,26 +153,26 @@ export default function DriverMobileMap({
         const isUltra = (st.power_kw ?? 0) >= 150;
         const isFast = (st.power_kw ?? 0) >= 50;
 
-        let pinBg = "#111312";
-        let pinBorder = "#E2E5DF";
-        let boltColor = "#C8F369";
+        let pinBg = "#0F172A";
+        let pinBorder = "#E2E8F0";
+        let boltColor = "#16A34A";
 
         if (isChargingWaypoint) {
-          pinBg = "#111312";
-          pinBorder = "#C8F369";
-          boltColor = "#C8F369";
+          pinBg = "#0284C7";
+          pinBorder = "#FFFFFF";
+          boltColor = "#FFFFFF";
         } else if (isSelected) {
-          pinBg = "#111312";
-          pinBorder = "#C8F369";
-          boltColor = "#ffffff";
+          pinBg = "#0284C7";
+          pinBorder = "#FFFFFF";
+          boltColor = "#FFFFFF";
         } else if (isUltra) {
-          pinBg = "#111312";
-          pinBorder = "#C8F369";
-          boltColor = "#C8F369";
+          pinBg = "#0F172A";
+          pinBorder = "#16A34A";
+          boltColor = "#16A34A";
         } else if (isFast) {
-          pinBg = "#252B26";
-          pinBorder = "#E2E5DF";
-          boltColor = "#A3D95B";
+          pinBg = "#1E293B";
+          pinBorder = "#38BDF8";
+          boltColor = "#38BDF8";
         } else {
           pinBg = "#ffffff";
           pinBorder = "#D0D5CC";
@@ -267,12 +267,12 @@ export default function DriverMobileMap({
         const wpCoords = activeRoute.chargingWaypointCoords;
         const waypointHtml = `
           <div style="position:relative;width:34px;height:34px;transform:translate(-17px,-17px);cursor:pointer;">
-            <div style="width:34px;height:34px;border-radius:50%;background:#111312;border:2.5px solid #C8F369;box-shadow:0 0 16px rgba(200,243,105,0.7);display:flex;align-items:center;justify-content:center;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="#C8F369" stroke="#C8F369" stroke-width="2">
+            <div style="width:34px;height:34px;border-radius:50%;background:#0284C7;border:2.5px solid #FFFFFF;box-shadow:0 0 16px rgba(2,132,199,0.7);display:flex;align-items:center;justify-content:center;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
               </svg>
             </div>
-            <div style="position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#111312;color:#C8F369;font-family:monospace;font-size:9.5px;font-weight:bold;padding:2px 6px;border-radius:6px;border:1px solid rgba(200,243,105,0.4);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+            <div style="position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#0F172A;color:#38BDF8;font-family:monospace;font-size:9.5px;font-weight:bold;padding:2px 6px;border-radius:6px;border:1px solid rgba(56,189,248,0.4);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
               CHARGER STOP
             </div>
           </div>

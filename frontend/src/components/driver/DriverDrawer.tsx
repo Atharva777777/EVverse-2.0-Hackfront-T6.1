@@ -202,6 +202,7 @@ export function DriverDrawer({
             return (
               <button
                 key={item.id}
+                id={`driver-drawer-tab-${item.id}`}
                 type="button"
                 onClick={() => {
                   onSelectTab(item.id);
@@ -209,16 +210,16 @@ export function DriverDrawer({
                 }}
                 className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-all duration-150 cursor-pointer group ${
                   isCurrent
-                    ? "bg-[#111312] text-white shadow-xs"
-                    : "hover:bg-white text-[#111312]"
+                    ? "bg-[#0F172A] text-white shadow-xs"
+                    : "hover:bg-white text-[#0F172A]"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                       isCurrent
-                        ? "bg-white/10 text-[#C8F369]"
-                        : "bg-white border border-black/[0.06] text-[#525854] group-hover:text-[#111312]"
+                        ? "bg-white/10 text-[#38BDF8]"
+                        : "bg-white border border-slate-200 text-slate-500 group-hover:text-[#0284C7]"
                     }`}
                   >
                     <Icon size={16} />
@@ -231,8 +232,8 @@ export function DriverDrawer({
                       <span
                         className={`text-[9px] font-mono px-1 rounded ${
                           isCurrent
-                            ? "bg-white/15 text-[#C8F369]"
-                            : "text-[#767D78]"
+                            ? "bg-[#0284C7]/30 text-[#E0F2FE]"
+                            : "text-slate-400"
                         }`}
                       >
                         {item.stepNumber}
@@ -240,7 +241,7 @@ export function DriverDrawer({
                     </div>
                     <div
                       className={`text-[10.5px] truncate mt-0.5 ${
-                        isCurrent ? "text-white/70" : "text-[#767D78]"
+                        isCurrent ? "text-slate-300" : "text-slate-500"
                       }`}
                     >
                       {item.subtitle}
@@ -252,7 +253,7 @@ export function DriverDrawer({
                   size={14}
                   className={`shrink-0 transition-transform ${
                     isCurrent
-                      ? "text-[#C8F369] translate-x-0.5"
+                      ? "text-[#38BDF8] translate-x-0.5"
                       : "text-black/20 group-hover:text-black/50"
                   }`}
                 />

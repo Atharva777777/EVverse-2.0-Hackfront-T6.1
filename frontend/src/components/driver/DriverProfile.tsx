@@ -45,7 +45,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({
           <h2 className="text-base font-bold text-[#111312]">Driver Profile</h2>
           <p className="text-[11px] text-[#525854]">Vehicle readiness &amp; charging preferences</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-[#111312] text-[#C8F369] flex items-center justify-center font-bold text-xs shadow-xs">
+        <div className="w-9 h-9 rounded-full bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs shadow-xs">
           EV
         </div>
       </div>
@@ -186,7 +186,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({
             aria-label="Auto-filter compatible plug standards"
             onClick={() => onToggleAutoCompatibility(!autoCompatibility)}
             className={`min-w-[44px] w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-              autoCompatibility ? "bg-[#111312]" : "bg-[#D1D5DB]"
+              autoCompatibility ? "bg-[#0284C7]" : "bg-[#D1D5DB]"
             }`}
           >
             <span

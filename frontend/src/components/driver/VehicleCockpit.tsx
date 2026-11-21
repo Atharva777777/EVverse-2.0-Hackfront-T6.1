@@ -134,8 +134,8 @@ export function VehicleCockpit({
                 }}
                 className={`min-h-[30px] shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                   isSelected
-                    ? "bg-[#111312] text-white shadow-2xs font-semibold"
-                    : "bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#525854] border border-black/[0.04]"
+                    ? "bg-[#E0F2FE] text-[#0369A1] border border-[#0284C7] shadow-2xs font-semibold"
+                    : "bg-white hover:bg-slate-50 text-slate-600 border border-slate-200"
                 }`}
               >
                 {city}
@@ -339,14 +339,14 @@ export function VehicleCockpit({
                   onClick={() => setDriveMode(m.id)}
                   className={`min-h-[44px] py-2 px-1 rounded-lg text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                     isSelected
-                      ? "bg-[#111312] text-white shadow-2xs font-bold"
-                      : "text-[#525854] hover:text-[#111312] font-semibold"
+                      ? "bg-[#0F172A] text-white shadow-2xs font-bold"
+                      : "text-slate-600 hover:text-slate-900 font-semibold"
                   }`}
                 >
                   <div className="text-xs">{m.label}</div>
                   <div
                     className={`text-[9.5px] font-mono mt-0.5 ${
-                      isSelected ? "text-[#C8F369]" : "text-[#767D78]"
+                      isSelected ? "text-[#38BDF8]" : "text-slate-400"
                     }`}
                   >
                     {m.sub}
@@ -368,8 +368,8 @@ export function VehicleCockpit({
             onClick={() => setIsPreconditioning(!isPreconditioning)}
             className={`min-h-[52px] p-2.5 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer active:scale-95 ${
               isPreconditioning
-                ? "bg-[#111312] text-white border-[#111312] shadow-2xs"
-                : "bg-[#FAF9F6] border-black/[0.06] text-[#111312] hover:bg-[#F5F4EF]"
+                ? "bg-[#DCFCE7] border-[#86EFAC] text-[#15803D] shadow-2xs"
+                : "bg-[#FAF9F6] border-slate-200 text-[#0F172A] hover:bg-slate-50"
             }`}
             aria-pressed={isPreconditioning}
             aria-label="Toggle battery thermal preconditioning"
@@ -377,12 +377,12 @@ export function VehicleCockpit({
             <div className="flex items-center justify-between w-full">
               <Zap
                 size={14}
-                className={isPreconditioning ? "text-[#C8F369]" : "text-[#16A34A]"}
+                className={isPreconditioning ? "text-[#16A34A]" : "text-slate-400"}
                 aria-hidden="true"
               />
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isPreconditioning ? "bg-[#C8F369] animate-pulse" : "bg-[#A3A3A3]"
+                  isPreconditioning ? "bg-[#16A34A] animate-pulse" : "bg-slate-300"
                 }`}
               />
             </div>
@@ -390,7 +390,7 @@ export function VehicleCockpit({
               <div className="text-[10px] font-bold">Battery Prep</div>
               <div
                 className={`text-[9px] font-mono truncate mt-0.5 ${
-                  isPreconditioning ? "text-[#C8F369]" : "text-[#525854]"
+                  isPreconditioning ? "text-[#16A34A] font-semibold" : "text-slate-500"
                 }`}
               >
                 {isPreconditioning ? "Warming Up" : "Standby"}

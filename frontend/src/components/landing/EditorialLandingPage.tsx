@@ -131,7 +131,7 @@ export function EditorialLandingPage({
               className="hover:text-black transition-colors flex items-center gap-1.5 font-bold text-[#111312]"
             >
               <span>Users</span>
-              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[#111312] text-[#C8F369]">
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD]">
                 App
               </span>
             </Link>
@@ -146,10 +146,10 @@ export function EditorialLandingPage({
             )}
             <Link
               href={routes.users || '/users'}
-              className="bg-[#111312] hover:bg-black text-[#C8F369] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs transition-all hover:scale-105 cursor-pointer ml-1"
+              className="bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-[0_2px_10px_rgba(2,132,199,0.3)] transition-all hover:scale-105 cursor-pointer ml-1"
             >
               <span className="text-xs">Launch App</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-[#C8F369]" />
+              <ArrowUpRight className="w-3.5 h-3.5 text-white" />
             </Link>
           </nav>
         </header>
@@ -220,10 +220,10 @@ export function EditorialLandingPage({
             {/* Interactive Play Badge hovering over 3D station */}
             <button
               onClick={() => setIsVideoModalOpen(true)}
-              className="absolute top-6 sm:top-8 right-2 sm:right-6 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#111312]/90 hover:bg-[#111312] text-white border border-[#14F1D9]/50 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all hover:scale-105 group cursor-pointer"
+              className="absolute top-6 sm:top-8 right-2 sm:right-6 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 backdrop-blur-md shadow-md transition-all hover:scale-105 group cursor-pointer"
               aria-label="Play app video overview"
             >
-              <div className="w-5 h-5 rounded-full bg-[#14F1D9] flex items-center justify-center text-[#111312] group-hover:scale-110 transition-transform">
+              <div className="w-5 h-5 rounded-full bg-[#0284C7] flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-xs">
                 <Play size={10} className="fill-current translate-x-0.5" />
               </div>
               <span className="text-[11px] font-bold tracking-wide">Play Video</span>
@@ -416,7 +416,7 @@ export function EditorialLandingPage({
                   onMouseLeave={() => setHoveredCard(null)}
                   className={`h-full flex flex-col bg-white rounded-[22px] overflow-hidden border border-black/[0.08] transition-all duration-300 cursor-pointer ${
                     hoveredCard === 3
-                      ? 'shadow-[0_20px_40px_rgba(0,0,0,0.12)] -translate-y-1.5 ring-2 ring-[#C8F369]'
+                      ? 'shadow-[0_20px_40px_rgba(0,0,0,0.12)] -translate-y-1.5 ring-2 ring-[#0284C7]'
                       : 'shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
                   }`}
                 >
@@ -430,8 +430,8 @@ export function EditorialLandingPage({
                         hoveredCard === 3 ? 'scale-105' : 'scale-100'
                       }`}
                     />
-                    <div className="absolute top-3 left-3 bg-[#111312]/90 backdrop-blur-md text-[#C8F369] px-2.5 py-1 rounded-full text-[10px] font-mono font-bold flex items-center gap-1.5 border border-[#C8F369]/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#C8F369] animate-pulse" />
+                    <div className="absolute top-3 left-3 bg-[#0F172A]/90 backdrop-blur-md text-[#38BDF8] px-2.5 py-1 rounded-full text-[10px] font-mono font-bold flex items-center gap-1.5 border border-[#38BDF8]/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-pulse" />
                       <span>MOBILE DRIVER APP</span>
                     </div>
                   </div>
@@ -441,7 +441,7 @@ export function EditorialLandingPage({
                       <div className="flex items-center justify-between mb-2.5">
                         <h3 className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight flex items-center gap-2">
                           <span>EV Users</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#111312] text-[#C8F369] font-bold">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#E0F2FE] text-[#0284C7] font-bold border border-[#BAE6FD]">
                             Live App
                           </span>
                         </h3>

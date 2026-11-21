@@ -51,16 +51,18 @@
   /* EVverse Driver Mobile Design Tokens */
   --driver-canvas:        #FAF9F6;
   --driver-card:          #FFFFFF;
-  --driver-ink:           #111312;
-  --driver-muted:         #525854;
-  --driver-subtle:        #8C938E;
-  --driver-accent:        #C8F369;
-  --driver-accent-dark:   #111312;
+  --driver-ink:           #0F172A;
+  --driver-muted:         #64748B;
+  --driver-subtle:        #94A3B8;
+  --driver-accent:        #0284C7;
+  --driver-accent-dark:   #0369A1;
+  --driver-accent-light:  #E0F2FE;
   --driver-success:       #16A34A;
+  --driver-success-light: #DCFCE7;
   --driver-warning:       #EAB308;
   --driver-danger:        #EF4444;
-  --driver-border:        rgba(17, 19, 18, 0.08);
-  --driver-border-subtle: rgba(17, 19, 18, 0.05);
+  --driver-border:        rgba(15, 23, 42, 0.08);
+  --driver-border-subtle: rgba(15, 23, 42, 0.05);
 }
 
 /* ── Reset & base ─────────────────────────────────────────────── */
