@@ -486,3 +486,53 @@ async def test_fast_charging_is_not_mistaken_for_sporty_driving(no_ai):
     assert "driving_style" not in r["applied"] and r["constraints"]["charging_speed"] == "fast"
     sporty = await journey_ai.interpret_text("Lonavala, I'll be driving sporty", **CTX)
     assert sporty["applied"]["driving_style"] == "sport"
+
+
+@pytest.mark.asyncio
+async def test_indic_hinglish_trip_input_parsing(no_ai):
+    """Verifies strengthened Indic and Hinglish natural language parsing."""
+    r = await journey_ai.interpret_text(
+        "Plan this trip to Lonavla with a 15 percent reserve and explain in Hindi",
+        **CTX
+    )
+    assert r["applied"].get("destination") == "Lonavala"
+    assert r["applied"].get("reserve_pct") == 15
+    assert r.get("language") == "hi-IN"
+
+    r2 = await journey_ai.interpret_text(
+        "Lonavala trip with १५% reserve and tez charging",
+        **CTX
+    )
+    assert r2["applied"].get("destination") == "Lonavala"
+    assert r2["applied"].get("reserve_pct") == 15
+    assert r2["constraints"].get("charging_speed") == "fast"
+
+
+@pytest.mark.asyncio
+async def test_indic_number_words_and_travel_intent(no_ai):
+    """Verifies phonetic Indic number words, travel phrases, and driving styles."""
+    r = await journey_ai.interpret_text(
+        "Lonavala jana hai with pandrah percent reserve and ek fast stop, aaram se chalana",
+        **CTX
+    )
+    assert r["applied"].get("destination") == "Lonavala"
+    assert r["applied"].get("reserve_pct") == 15
+    assert r["applied"].get("driving_style") == "eco"
+    assert r["constraints"].get("max_charging_stops") == 1
+    assert r["constraints"].get("charging_speed") == "fast"
+
+
+@pytest.mark.asyncio
+async def test_multilingual_indic_detection(no_ai):
+    """Verifies Marathi, Tamil, Telugu, and Bengali intent extraction."""
+    r_mr = await journey_ai.interpret_text("Lonavala trip Marathi madhe sanga, bina ac", **CTX)
+    assert r_mr.get("language") == "mr-IN"
+    assert r_mr["applied"].get("hvac_mode") == "off"
+
+    r_ta = await journey_ai.interpret_text("Mumbai trip explain in Tamil, surakshit route", **CTX)
+    assert r_ta.get("language") == "ta-IN"
+    assert r_ta["constraints"].get("route_preference") == "safer"
+
+    r_te = await journey_ai.interpret_text("trip to Lonavla in Telugu", **CTX)
+    assert r_te.get("language") == "te-IN"
+    assert r_te["applied"].get("destination") == "Lonavala"
