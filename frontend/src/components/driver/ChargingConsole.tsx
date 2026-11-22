@@ -462,7 +462,7 @@ export function ChargingConsole({
           role="dialog"
           aria-modal="true"
           aria-label="Session Receipt"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 border border-black/[0.08] shadow-2xl relative text-left">
             <button

@@ -85,7 +85,7 @@ export function LiveDataSourceSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="live-data-popover-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150"
+      className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150"
       onClick={onClose}
     >
       <div

@@ -115,7 +115,7 @@ export function JourneyPreferences({ onClose, onChanged }: Props) {
   const visibleSuggestions = suggestions.filter((s) => !dismissed.includes(s.key));
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/30" onClick={onClose}>
+    <div className="absolute inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/30" onClick={onClose}>
       <div
         role="dialog"
         aria-label="Your journey preferences"
