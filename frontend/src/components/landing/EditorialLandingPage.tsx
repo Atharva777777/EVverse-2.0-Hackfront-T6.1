@@ -430,44 +430,28 @@ export function EditorialLandingPage({
                         hoveredCard === 3 ? 'scale-105' : 'scale-100'
                       }`}
                     />
-                    <div className="absolute top-3 left-3 bg-[#0F172A]/90 backdrop-blur-md text-[#38BDF8] px-2.5 py-1 rounded-full text-[10px] font-mono font-bold flex items-center gap-1.5 border border-[#38BDF8]/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-pulse" />
-                      <span>MOBILE DRIVER APP</span>
-                    </div>
                   </div>
 
-                  <div className="p-6 flex flex-col flex-1 justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <h3 className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight flex items-center gap-2">
-                          <span>EV Users</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#E0F2FE] text-[#0284C7] font-bold border border-[#BAE6FD]">
-                            Live App
-                          </span>
-                        </h3>
-                        <ArrowUpRight
-                          size={18}
-                          className={`transition-all duration-200 ${
-                            hoveredCard === 3
-                              ? 'text-[#111312] translate-x-0.5 -translate-y-0.5'
-                              : 'text-[#86868b]'
-                          }`}
-                        />
-                      </div>
-                      <p className="text-sm leading-relaxed text-[#6e6e73] m-0">
-                        Discover charging stations, reserve bays, check connector compatibility, and plan journeys in the interactive mobile driver cockpit.
-                      </p>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <h3 className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight flex items-center gap-2">
+                        <span>EV Users</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#E0F2FE] text-[#0284C7] font-bold border border-[#BAE6FD]">
+                          Live App
+                        </span>
+                      </h3>
+                      <ArrowUpRight
+                        size={18}
+                        className={`transition-all duration-200 ${
+                          hoveredCard === 3
+                            ? 'text-[#0284C7] translate-x-0.5 -translate-y-0.5'
+                            : 'text-[#86868b]'
+                        }`}
+                      />
                     </div>
-
-                    <div className="mt-5 pt-3 border-t border-black/[0.06] flex items-center justify-between text-xs font-semibold text-[#111312]">
-                      <span className="text-[#16A34A] flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                        Ready to Explore
-                      </span>
-                      <span className="group-hover:translate-x-1 transition-transform flex items-center gap-1 font-bold text-[#111312]">
-                        Open Mobile App →
-                      </span>
-                    </div>
+                    <p className="text-sm leading-relaxed text-[#6e6e73] m-0">
+                      Discover charging stations, reserve bays, check connector compatibility, and plan journeys in the interactive mobile driver cockpit.
+                    </p>
                   </div>
                 </div>
               </Link>

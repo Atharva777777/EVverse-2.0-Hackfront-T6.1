@@ -15,6 +15,7 @@ export interface GlobalCityOption {
 export const SUPPORTED_COUNTRIES: { name: string; flag: string; cities: string[] }[] = [
   { name: "China", flag: "🇨🇳", cities: ["Shenzhen", "Beijing"] },
   { name: "India", flag: "🇮🇳", cities: [
+    "Delhi", "Noida", "Gurugram", "Chandigarh", "Jaipur", "Bengaluru", "Hyderabad",
     "Mumbai", "Navi Mumbai", "Thane", "Kalyan-Dombivli", "Mira-Bhayandar",
     "Vasai-Virar", "Pune", "Pimpri-Chinchwad", "Hinjawadi", "Talegaon Dabhade",
     "Chakan", "Nashik", "Ahilyanagar (Ahmednagar)", "Kolhapur", "Sangli",
@@ -27,6 +28,13 @@ export const SUPPORTED_COUNTRIES: { name: string; flag: string; cities: string[]
 export const CITY_CONFIGS: Record<string, GlobalCityOption> = {
   "Shenzhen": { city: "Shenzhen", country: "China", lat: 22.6349, lng: 114.0808, zoom: 13, desc: "Shenzhen Mobility & Tech Corridor", flag: "🇨🇳" },
   "Beijing": { city: "Beijing", country: "China", lat: 39.9096, lng: 116.3445, zoom: 12, desc: "Capital Metropolitan Region", flag: "🇨🇳" },
+  "Delhi": { city: "Delhi", country: "India", lat: 28.6139, lng: 77.2090, zoom: 12, desc: "National Capital Region & EV Corridor", flag: "🇮🇳" },
+  "Noida": { city: "Noida", country: "India", lat: 28.5355, lng: 77.3910, zoom: 12, desc: "NCR Tech & Express Highway Hub", flag: "🇮🇳" },
+  "Gurugram": { city: "Gurugram", country: "India", lat: 28.4595, lng: 77.0266, zoom: 12, desc: "Cyber City & Transit Arteries", flag: "🇮🇳" },
+  "Chandigarh": { city: "Chandigarh", country: "India", lat: 30.7333, lng: 76.7794, zoom: 12, desc: "Tri-City & Northern Gateway", flag: "🇮🇳" },
+  "Jaipur": { city: "Jaipur", country: "India", lat: 26.9124, lng: 75.7873, zoom: 12, desc: "Pink City & Expressway Arteries", flag: "🇮🇳" },
+  "Bengaluru": { city: "Bengaluru", country: "India", lat: 12.9716, lng: 77.5946, zoom: 12, desc: "Silicon Valley Mobility Hub", flag: "🇮🇳" },
+  "Hyderabad": { city: "Hyderabad", country: "India", lat: 17.3850, lng: 78.4867, zoom: 12, desc: "Cyberabad EV Innovation Center", flag: "🇮🇳" },
   "Mumbai": { city: "Mumbai", country: "India", lat: 19.0467, lng: 72.8911, zoom: 12, desc: "Financial Capital & Megacity", flag: "🇮🇳" },
   "Navi Mumbai": { city: "Navi Mumbai", country: "India", lat: 19.0330, lng: 73.0297, zoom: 12, desc: "Planned Satellite City", flag: "🇮🇳" },
   "Thane": { city: "Thane", country: "India", lat: 19.2183, lng: 72.9781, zoom: 12, desc: "Mumbai Metropolitan Region", flag: "🇮🇳" },

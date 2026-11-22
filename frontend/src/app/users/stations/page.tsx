@@ -136,9 +136,9 @@ export default function EVVerseDriverPage() {
 
   const isFramed = !isMobileScreen;
 
-  // Selected city & live data
-  const [selectedCity, setSelectedCity] = useState("Pune");
-  const cityConfig = CITY_CONFIGS[selectedCity] || CITY_CONFIGS["Pune"];
+  // Selected city & live data (Default to Delhi for North India & NCR corridors, auto-detects via GPS)
+  const [selectedCity, setSelectedCity] = useState("Delhi");
+  const cityConfig = CITY_CONFIGS[selectedCity] || CITY_CONFIGS["Delhi"];
 
   // Active Vehicle & Fleet State (persisted with backend/storage adapter)
   const [vehicles, setVehicles] = useState<EVVehicle[]>(VERIFIED_GARAGE_VEHICLES);
@@ -291,6 +291,20 @@ export default function EVVerseDriverPage() {
         const isPrecise = pos.coords.accuracy <= 100;
         setLocationStatus(isPrecise ? "precise" : "approximate");
         setMapCenter(coords);
+
+        // Auto-detect closest regional city from device GPS
+        let nearestCity = selectedCity;
+        let minD = Infinity;
+        for (const [cityName, conf] of Object.entries(CITY_CONFIGS)) {
+          const d = haversineKm(coords[0], coords[1], conf.lat, conf.lng);
+          if (d < minD) {
+            minD = d;
+            nearestCity = cityName;
+          }
+        }
+        if (minD <= 150 && nearestCity !== selectedCity) {
+          setSelectedCity(nearestCity);
+        }
       },
       (err) => {
         if (!isMountedRef.current) return;
@@ -308,6 +322,20 @@ export default function EVVerseDriverPage() {
               setDeviceAccuracy(pos.coords.accuracy);
               setLocationStatus("approximate");
               setMapCenter(coords);
+
+              // Auto-detect closest regional city from device GPS fallback
+              let nearestCity = selectedCity;
+              let minD = Infinity;
+              for (const [cityName, conf] of Object.entries(CITY_CONFIGS)) {
+                const d = haversineKm(coords[0], coords[1], conf.lat, conf.lng);
+                if (d < minD) {
+                  minD = d;
+                  nearestCity = cityName;
+                }
+              }
+              if (minD <= 150 && nearestCity !== selectedCity) {
+                setSelectedCity(nearestCity);
+              }
             },
             (fallbackErr) => {
               if (!isMountedRef.current) return;
@@ -1493,21 +1521,6 @@ export default function EVVerseDriverPage() {
                           )}
                         </div>
                       )}
-
-                      {/* Complete Station Detail Sheet Experience */}
-                      <StationDetailSheet
-                        station={selectedStation}
-                        userLocation={userLocation}
-                        isOpen={isStationDetailOpen && !!selectedStation}
-                        onClose={() => setIsStationDetailOpen(false)}
-                        onStartNavigation={(st: LiveStation) => startNavigation(st as DriverStation)}
-                        onStartCharging={(st) => startChargingSession(st as DriverStation)}
-                        isSaved={selectedStation ? savedStationIds.has(selectedStation.station_id) : false}
-                        onToggleSave={(id) => toggleSaveStation(id)}
-                        activeVehicleSoc={currentBatteryPct}
-                        vehicleWltpKm={activeVehicle.wltpRangeKm}
-                        activeVehicle={activeVehicle}
-                      />
                     </div>
                   </div>
                 )}
@@ -1525,6 +1538,30 @@ export default function EVVerseDriverPage() {
                       locationStatus={locationStatus}
                       onAcquireLocation={() => requestDeviceLocation(true)}
                       selectedCity={selectedCity}
+                      onCityChange={setSelectedCity}
+                      onBatteryChange={setCurrentBatteryPct}
+                      onInspectStation={(stId, stName) => {
+                        const match = filteredStations.find((s) => s.station_id === stId) ||
+                                      journeyCandidateStations.find((s) => s.station_id === stId);
+                        if (match) {
+                          setSelectedStation(match);
+                        } else {
+                          setSelectedStation({
+                            station_id: stId,
+                            name: stName || "Corridor Charging Hub",
+                            address: `${selectedCity} Corridor`,
+                            latitude: userLocation[0] + 0.04,
+                            longitude: userLocation[1] + 0.04,
+                            power_kw: 60,
+                            bays: 4,
+                            available_bays: 3,
+                            status: "available",
+                            operator_name: "EVverse Network",
+                            connectors: [{ id: "1", type: activeVehicle.plugType.split(" ")[0] || "CCS2", powerKw: 60, status: "available" }],
+                          } as any);
+                        }
+                        setIsStationDetailOpen(true);
+                      }}
                       onStartTripNavigation={({ name, latitude, longitude, primaryStation, originCoords }) => {
                         startRoadNavigation({
                           destination: [latitude, longitude],
@@ -1643,6 +1680,21 @@ export default function EVVerseDriverPage() {
                 fallbackReason={fallbackReason}
                 sources={sources}
                 onRefresh={refetch}
+              />
+
+              {/* ── Complete Station Detail & Booking Sheet (Contained Strictly in Phone Frame) ── */}
+              <StationDetailSheet
+                station={selectedStation}
+                userLocation={userLocation}
+                isOpen={isStationDetailOpen && !!selectedStation}
+                onClose={() => setIsStationDetailOpen(false)}
+                onStartNavigation={(st: LiveStation) => startNavigation(st as DriverStation)}
+                onStartCharging={(st) => startChargingSession(st as DriverStation)}
+                isSaved={selectedStation ? savedStationIds.has(selectedStation.station_id) : false}
+                onToggleSave={(id) => toggleSaveStation(id)}
+                activeVehicleSoc={currentBatteryPct}
+                vehicleWltpKm={activeVehicle.wltpRangeKm}
+                activeVehicle={activeVehicle}
               />
             </div>
           </div>

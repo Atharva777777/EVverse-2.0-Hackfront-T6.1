@@ -8,6 +8,10 @@ import {
   Navigation,
   Zap,
   MapPin,
+  ShieldAlert,
+  PhoneCall,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { CITY_CONFIGS } from "@/components/CountryCitySelector";
 
@@ -67,6 +71,8 @@ export function VehicleCockpit({
   // Collapsible Chassis Specs (collapsed by default to keep screen focused)
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState<boolean>(false);
+  const [isSosOpen, setIsSosOpen] = useState<boolean>(false);
+  const [sosBeaconDispatched, setSosBeaconDispatched] = useState<boolean>(false);
 
   // Auto-scroll to section anchor if requested in URL
   useEffect(() => {
@@ -80,7 +86,7 @@ export function VehicleCockpit({
   // Popular quick location chips - ensure active city is always visible among the chips
   const allCityNames = Object.keys(CITY_CONFIGS);
   const displayCities = useMemo(() => {
-    const defaultQuick = ["Pune", "Mumbai", "Navi Mumbai", "Pimpri-Chinchwad", "Thane"];
+    const defaultQuick = ["Delhi", "Pune", "Mumbai", "Gurugram", "Noida", "Bengaluru", "Jaipur"];
     if (selectedCity && !defaultQuick.some((c) => c.toLowerCase() === selectedCity.toLowerCase())) {
       return [selectedCity, ...defaultQuick];
     }
@@ -102,22 +108,35 @@ export function VehicleCockpit({
             <span className="text-xs font-bold text-[#111312]">{selectedCity}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-            className="min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#525854] hover:text-[#111312] border border-black/[0.06] flex items-center gap-1 transition-all cursor-pointer"
-            aria-expanded={isCityDropdownOpen}
-            aria-label="Change charging grid region"
-          >
-            <span>Change</span>
-            <ChevronDown
-              size={12}
-              className={`transition-transform duration-200 ${
-                isCityDropdownOpen ? "rotate-180" : ""
-              }`}
-              aria-hidden="true"
-            />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Circular Red SOS Button — clearly visible for elderly drivers */}
+            <button
+              type="button"
+              onClick={() => setIsSosOpen(true)}
+              className="w-8 h-8 min-w-[32px] min-h-[32px] sm:w-9 sm:h-9 rounded-full bg-[#DC2626] hover:bg-[#B91C1C] text-white font-black text-[11px] tracking-wider flex items-center justify-center shadow-md active:scale-90 transition-all border-2 border-red-200 cursor-pointer"
+              title="Emergency SOS Roadside Assistance"
+              aria-label="Emergency SOS Roadside Assistance"
+            >
+              SOS
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+              className="min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#525854] hover:text-[#111312] border border-black/[0.06] flex items-center gap-1 transition-all cursor-pointer"
+              aria-expanded={isCityDropdownOpen}
+              aria-label="Change charging grid region"
+            >
+              <span>Change</span>
+              <ChevronDown
+                size={12}
+                className={`transition-transform duration-200 ${
+                  isCityDropdownOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
 
         {/* Quick City Chips */}
@@ -534,6 +553,137 @@ export function VehicleCockpit({
           </div>
         )}
       </section>
+
+      {/* ── Emergency SOS Modal (Contained Strictly Within Phone UI) ── */}
+      {isSosOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Emergency SOS Roadside Assistance"
+          className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-sm p-4 sm:p-5 border border-red-200 shadow-2xl space-y-3.5 max-h-[90%] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-red-100 border border-red-300 flex items-center justify-center text-red-600 shrink-0">
+                  <ShieldAlert size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-[#111312] leading-tight">
+                    Emergency SOS
+                  </h3>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    24/7 Roadside Assistance & Breakdown
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSosOpen(false);
+                  setSosBeaconDispatched(false);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+                aria-label="Close SOS"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Quick Dispatch Beacon Alert */}
+            {sosBeaconDispatched ? (
+              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl text-center space-y-1">
+                <CheckCircle2 size={24} className="text-emerald-600 mx-auto" />
+                <div className="text-xs font-bold text-emerald-800">SOS Beacon Broadcast</div>
+                <p className="text-[11px] text-emerald-700 leading-relaxed">
+                  Patrol & towing network dispatched for your {vehicle.make} {vehicle.model} in {selectedCity}. Help is on the way.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSosBeaconDispatched(true)}
+                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md border border-red-400 cursor-pointer transition-all"
+              >
+                <PhoneCall size={16} />
+                <span>Broadcast SOS to Nearest EV Patrol</span>
+              </button>
+            )}
+
+            {/* Elder-Friendly Emergency Direct Call Cards */}
+            <div className="space-y-2 pt-1">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
+                1-Tap Emergency Direct Call
+              </div>
+
+              {/* 1. EV Roadside Assistance */}
+              <a
+                href="tel:1073"
+                className="p-3 rounded-2xl bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-between transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    EV
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">EV Roadside & Towing</div>
+                    <div className="text-[10px] text-slate-500 font-mono">National Helpline: 1073</div>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-red-600 group-hover:underline">Call 1073 →</span>
+              </a>
+
+              {/* 2. National Emergency */}
+              <a
+                href="tel:112"
+                className="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    112
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">National Emergency (All-in-One)</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Police • Ambulance • Fire</div>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-slate-900 group-hover:underline">Call 112 →</span>
+              </a>
+
+              {/* 3. Medical Emergency */}
+              <a
+                href="tel:108"
+                className="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    108
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Ambulance & Paramedics</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Direct Medical Dispatch</div>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-emerald-700 group-hover:underline">Call 108 →</span>
+              </a>
+            </div>
+
+            {/* Elder-Readable Location & Vehicle Snapshot */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
+                Read out this info to emergency operator:
+              </div>
+              <div className="text-xs font-bold text-slate-800">
+                Location: <span className="text-[#0284C7]">{selectedCity} Grid Region</span>
+              </div>
+              <div className="text-[11px] text-slate-600 font-mono">
+                Vehicle: {vehicle.make} {vehicle.model} • Battery: {currentBatteryPct}%
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
