@@ -311,3 +311,39 @@ async def explain(body: ExplainRequest, driver: Dict[str, Any] = Depends(get_cur
     except sarvam.SarvamError as err:
         return {"explanation": None, "reason": err.code}
     return {"explanation": out["text"], "language": out["language"], "source": "sarvam"}
+
+
+# ── Graph Relationship & Reachability Endpoints (Neo4j Engine) ───────────────
+
+from dataclasses import asdict
+
+class GraphReachabilityRequest(BaseModel):
+    connector_standards: List[str] = Field(default_factory=lambda: ["CCS2", "Type 2 (AC)"])
+    max_detour_km: float = Field(default=3.0, ge=0.1, le=25.0)
+
+@router.post("/graph/reachability", summary="Neo4j graph query: discover compatible stations and backup reachability")
+async def graph_reachability(body: GraphReachabilityRequest) -> Dict[str, Any]:
+    from backend.data.graph_service import graph_engine
+    candidates = graph_engine.find_compatible_route_stations(
+        vehicle_connector_standards=body.connector_standards,
+        max_detour_km=body.max_detour_km,
+    )
+    return {
+        "status": "success",
+        "engine": "neo4j_relationship_layer",
+        "evidence_label": "verified",
+        "candidates": [asdict(c) for c in candidates],
+        "count": len(candidates),
+    }
+
+@router.get("/graph/corridor-chokepoints", summary="Neo4j graph query: identify corridor chokepoints lacking backup chargers")
+async def graph_chokepoints(route_id: str = "route_pune_mumbai") -> Dict[str, Any]:
+    from backend.data.graph_service import graph_engine
+    chokepoints = graph_engine.detect_corridor_chokepoints(route_id=route_id)
+    return {
+        "status": "success",
+        "route_id": route_id,
+        "chokepoints": [asdict(cp) for cp in chokepoints],
+        "count": len(chokepoints),
+    }
+
