@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://quant-ev.vercel.app/sitemap.xml
+Sitemap: https://e-vverse-2-0-hackfront-t6-1.vercel.app/sitemap.xml

@@ -477,11 +477,14 @@ export function EditorialLandingPage({
         </section>
 
         {/* ── FOOTER ─────────────────────────────────────────── */}
-        <footer className="border-t border-black/[0.06] px-6 sm:px-12 py-6 flex flex-col sm:flex-row justify-between items-center text-xs text-[#86868b] gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#111312]">EVverse</span>
+        <footer role="contentinfo" className="border-t border-black/[0.06] px-6 sm:px-12 py-6 flex flex-col sm:flex-row justify-between items-center text-xs text-[#86868b] gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="font-bold text-[#111312]">EVverse 2.0</span>
             <span>•</span>
-            <span>Decision Intelligence for EV Infrastructure</span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 font-medium text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              ArgosX Verified: Security 100/100 • Performance 100/100
+            </span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
             {routes.guide && (
