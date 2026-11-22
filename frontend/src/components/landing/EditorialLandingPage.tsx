@@ -7,8 +7,6 @@ import {
   ArrowUpRight,
   ChevronDown,
   BookOpen,
-  Play,
-  X,
   Sparkles
 } from 'lucide-react';
 import { AbstractEditorialTimeline } from './AbstractEditorialTimeline';
@@ -47,8 +45,6 @@ export function EditorialLandingPage({
   const [scrollY, setScrollY] = useState(0);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
   const getAsset = (path: string) => `${assetBasePath}${path}`;
 
@@ -56,16 +52,9 @@ export function EditorialLandingPage({
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsVideoModalOpen(false);
-      }
-    };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -216,18 +205,6 @@ export function EditorialLandingPage({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 700px, 800px"
               />
             </div>
-
-            {/* Interactive Play Badge hovering over 3D station */}
-            <button
-              onClick={() => setIsVideoModalOpen(true)}
-              className="absolute top-6 sm:top-8 right-2 sm:right-6 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-slate-800 border border-slate-200/80 backdrop-blur-md shadow-md transition-all hover:scale-105 group cursor-pointer"
-              aria-label="Play app video overview"
-            >
-              <div className="w-5 h-5 rounded-full bg-[#0284C7] flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-xs">
-                <Play size={10} className="fill-current translate-x-0.5" />
-              </div>
-              <span className="text-[11px] font-bold tracking-wide">Play Video</span>
-            </button>
 
             {/* Spec Pointer Dot and Leader Line (Fades smoothly on scroll) */}
             <div
@@ -489,41 +466,6 @@ export function EditorialLandingPage({
         </footer>
 
       </div>
-
-      {/* ── VIDEO MODAL DIALOG ──────────────────────────────── */}
-      {isVideoModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsVideoModalOpen(false);
-            }
-          }}
-        >
-          <div className="relative w-full max-w-5xl rounded-3xl overflow-hidden border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_80px_rgba(20,241,217,0.2)]">
-            {/* Minimalist Floating Close Button */}
-            <button
-              onClick={() => setIsVideoModalOpen(false)}
-              className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-black/70 hover:bg-black/95 text-white/80 hover:text-white flex items-center justify-center transition-all backdrop-blur-md border border-white/15 cursor-pointer shadow-lg"
-              aria-label="Close video modal"
-            >
-              <X size={18} />
-            </button>
-
-            {/* Video Player */}
-            <div className="relative aspect-video w-full bg-black flex items-center justify-center">
-              <video
-                ref={videoRef}
-                src={getAsset('/videos/demo_video.mp4')}
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
