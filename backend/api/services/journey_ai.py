@@ -82,13 +82,27 @@ def _number(v: Any) -> Optional[float]:
     if isinstance(v, (int, float)):
         return float(v) if math.isfinite(v) else None
     if isinstance(v, str):
-        m = re.fullmatch(r"\s*(\d{1,3}(?:\.\d+)?)\s*%?\s*", v)
+        norm = _normalise_digits(v)
+        m = re.search(r"(\d{1,3}(?:\.\d+)?)\s*(?:%|percent|per\s*cent|pratishat|प्रतिशत|टक्के)?", norm, re.IGNORECASE)
         return float(m.group(1)) if m else None
     return None
 
 
+_DEST_ALIASES = {
+    "lonavla": "lonavala",
+    "khandala": "khandala",
+    "bombay": "mumbai",
+    "poona": "pune",
+    "punecity": "pune",
+    "alibag": "alibaug",
+    "alibaugh": "alibaug",
+    "mahabaleshvar": "mahabaleshwar",
+    "nasik": "nashik",
+}
+
+
 def _match_destination(candidate: Optional[str], known: List[str]) -> Optional[str]:
-    """Exact (case-insensitive) match, else a UNIQUE substring match. Never guesses between two."""
+    """Exact (case-insensitive) match, else alias match, else a UNIQUE substring match. Never guesses between two."""
     if not candidate or not isinstance(candidate, str):
         return None
     c = candidate.strip().lower()
@@ -97,6 +111,11 @@ def _match_destination(candidate: Optional[str], known: List[str]) -> Optional[s
     for k in known:
         if k.lower() == c:
             return k
+    alias = _DEST_ALIASES.get(c)
+    if alias:
+        for k in known:
+            if k.lower() == alias:
+                return k
     hits = [k for k in known if c in k.lower() or k.lower() in c]
     return hits[0] if len(hits) == 1 else None
 
@@ -257,8 +276,9 @@ def resolve_intent(
 # ── Rules fallback (no AI): same validation path ──────────────────────────────
 
 def rules_raw(text: str, known_destinations: List[str]) -> Dict[str, Any]:
-    p = parse_journey_text(text, known_destinations)
-    low = text.lower()
+    norm_text = _normalise_digits(text)
+    p = parse_journey_text(norm_text, known_destinations)
+    low = norm_text.lower()
     raw: Dict[str, Any] = {
         "destination": p.get("destination"),
         "destination_text": p.get("destination_unmatched"),
@@ -267,19 +287,38 @@ def rules_raw(text: str, known_destinations: List[str]) -> Dict[str, Any]:
         "driving_style": p.get("driving_style"),
         "climate": p.get("hvac_mode"),
     }
-    if re.search(r"\bfast\b.*\b(charg|stop)|\b(charg|stop)\w*\b.*\bfast\b", low):
+
+    # Extract Indic language preference if mentioned (e.g. "in Hindi", "Hindi me", "Marathi madhe")
+    if re.search(r"\b(in hindi|hindi me|hindi mein|हिंदी)\b", low):
+        raw["language"] = "hi-IN"
+    elif re.search(r"\b(in marathi|marathi madhe|मराठी)\b", low):
+        raw["language"] = "mr-IN"
+    elif re.search(r"\b(in tamil|tamilil|தமிழ்)\b", low):
+        raw["language"] = "ta-IN"
+
+    # Multi-lingual reserve backup parsing
+    if raw["min_arrival_reserve_pct"] is None:
+        m_res = re.search(r"(\d{1,3}(?:\.\d+)?)\s*(?:%|percent|pratishat|प्रतिशत|टक्के)?\s*(?:reserve|buffer|bachana|bachake)", low)
+        if m_res:
+            v_res = float(m_res.group(1))
+            if 0 <= v_res <= 50:
+                raw["min_arrival_reserve_pct"] = v_res
+
+    if re.search(r"\b(fast|quick|rapid|tez|jaldi)\b.*\b(charg|stop)|\b(charg|stop)\w*\b.*\b(fast|quick|tez)\b", low):
         raw["preferred_charging_speed"] = "fast"
-    if re.search(r"\b(no|zero|without)\b.{0,12}\b(charging|stops?)\b", low):
+    if re.search(r"\b(no|zero|without|bina|kisi bhi)\b.{0,12}\b(charging|stops?)\b", low):
         raw["max_charging_stops"] = 0
     else:
-        m = re.search(r"\b(one|1|two|2|three|3)\s+(?:fast\s+)?(?:charging\s+)?stops?\b", low)
+        m = re.search(r"\b(one|1|two|2|three|3|ek|do|teen)\s+(?:fast\s+)?(?:charging\s+)?stops?\b", low)
         if m:
-            raw["max_charging_stops"] = {"one": 1, "1": 1, "two": 2, "2": 2, "three": 3, "3": 3}[m.group(1)]
-    if re.search(r"\breliab", low):
+            raw["max_charging_stops"] = {"one": 1, "1": 1, "ek": 1, "two": 2, "2": 2, "do": 2, "three": 3, "3": 3, "teen": 3}[m.group(1)]
+    if re.search(r"\breliab|bharosemand\b", low):
         raw["route_preference"] = "reliable_chargers"
-    elif re.search(r"\b(economical|cheap|cheapest|lowest cost)\b", low):
+    elif re.search(r"\b(safest|surakshit|suraksha|safer)\b", low):
+        raw["route_preference"] = "safer"
+    elif re.search(r"\b(economical|cheap|cheapest|lowest cost|sasta)\b", low):
         raw["route_preference"] = "economical"
-    elif re.search(r"\bfewer stops\b|\bleast stops\b", low):
+    elif re.search(r"\bfewer stops\b|\bleast stops\b|\bkam stops\b", low):
         raw["route_preference"] = "fewer_stops"
     return raw
 
@@ -287,6 +326,8 @@ def rules_raw(text: str, known_destinations: List[str]) -> Dict[str, Any]:
 # ── Sarvam intent extraction ──────────────────────────────────────────────────
 
 _INTENT_SYSTEM = """You convert a driver's request about an electric-vehicle journey into ONE JSON object.
+The driver may write or speak in English, Hindi, Hinglish, Marathi, Tamil, or other Indian languages (e.g. 'Plan this trip with a 15 percent reserve and explain the safest charging option in Hindi', 'Pune se Lonavala jana hai 15% reserve ke sath').
+Always map transliterated cities (e.g. 'Lonavla', 'Poona', 'Bombay') to the matching entry in known_destinations.
 Reply with JSON only, using exactly these keys (use null for anything the driver did not say):
 {
  "origin_text": string|null,
@@ -294,13 +335,13 @@ Reply with JSON only, using exactly these keys (use null for anything the driver
  "destination_text": string|null,   // the place as the driver said it
  "vehicle_text": string|null,
  "start_battery_pct": number|null,  // battery the driver HAS now
- "min_arrival_reserve_pct": number|null, // battery they want left on arrival
+ "min_arrival_reserve_pct": number|null, // battery they want left on arrival (e.g. 15 from "15 percent reserve")
  "max_charging_stops": integer|null,
  "preferred_charging_speed": "fast"|"standard"|null,
  "route_preference": "balanced"|"fewer_stops"|"reliable_chargers"|"safer"|"faster"|"economical"|null,
  "driving_style": "eco"|"normal"|"sport"|null,
  "climate": "off"|"eco"|"normal"|"max"|null,
- "language": BCP-47 code of the language the driver wrote in (e.g. "hi-IN","ta-IN","en-IN"),
+ "language": BCP-47 code of the language the driver wrote in or asked to explain in (e.g. "hi-IN","mr-IN","ta-IN","en-IN"),
  "preference_updates": [{"key": one of ALLOWED_PREFERENCE_KEYS, "value": boolean|integer}]
 }
 Rules: never invent values the driver did not state. Only add preference_updates when the driver states a

@@ -717,7 +717,7 @@ def analyze_journey(req: JourneyInput, prefs: Optional[Preferences] = None, now:
 
 # ── Natural-language convenience (deterministic; fills the form, nothing more) ──
 
-_PCT = r"(\d{1,3}(?:\.\d+)?)\s*(?:%|percent|per\s*cent)"
+_PCT = r"(\d{1,3}(?:\.\d+)?)\s*(?:%|percent|per\s*cent|pratishat|प्रतिशत|टक्के)"
 
 
 def parse_journey_text(text: str, known_destinations: Optional[List[str]] = None) -> Dict[str, Any]:

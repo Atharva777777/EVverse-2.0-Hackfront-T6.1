@@ -486,3 +486,23 @@ async def test_fast_charging_is_not_mistaken_for_sporty_driving(no_ai):
     assert "driving_style" not in r["applied"] and r["constraints"]["charging_speed"] == "fast"
     sporty = await journey_ai.interpret_text("Lonavala, I'll be driving sporty", **CTX)
     assert sporty["applied"]["driving_style"] == "sport"
+
+
+@pytest.mark.asyncio
+async def test_indic_hinglish_trip_input_parsing(no_ai):
+    """Verifies strengthened Indic and Hinglish natural language parsing."""
+    r = await journey_ai.interpret_text(
+        "Plan this trip to Lonavla with a 15 percent reserve and explain in Hindi",
+        **CTX
+    )
+    assert r["applied"].get("destination") == "Lonavala"
+    assert r["applied"].get("reserve_pct") == 15
+    assert r.get("language") == "hi-IN"
+
+    r2 = await journey_ai.interpret_text(
+        "Lonavala trip with १५% reserve and tez charging",
+        **CTX
+    )
+    assert r2["applied"].get("destination") == "Lonavala"
+    assert r2["applied"].get("reserve_pct") == 15
+    assert r2["constraints"].get("charging_speed") == "fast"
