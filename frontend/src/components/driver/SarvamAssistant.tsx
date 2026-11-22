@@ -21,13 +21,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import {
-  SungamMessage,
-  SungamStatus,
-  fetchSungamStatus,
-  sendSungamChat,
-  sendSungamVoice,
-  fetchSungamTTS,
-} from "@/lib/sungamApi";
+  SarvamMessage,
+  SarvamStatus,
+  fetchSarvamStatus,
+  sendSarvamChat,
+  sendSarvamVoice,
+  fetchSarvamTTS,
+} from "@/lib/sarvamApi";
 
 const QUICK_PROMPTS = [
   {
@@ -57,11 +57,11 @@ const QUICK_PROMPTS = [
   },
 ];
 
-export function SungamBot() {
+export function SarvamAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [status, setStatus] = useState<SungamStatus | null>(null);
+  const [status, setStatus] = useState<SarvamStatus | null>(null);
   const [selectedLang, setSelectedLang] = useState<string>("en-IN");
-  const [messages, setMessages] = useState<SungamMessage[]>([]);
+  const [messages, setMessages] = useState<SarvamMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -74,9 +74,9 @@ export function SungamBot() {
 
   // Load status on mount
   useEffect(() => {
-    fetchSungamStatus()
+    fetchSarvamStatus()
       .then(setStatus)
-      .catch((e) => console.warn("Sungam status check failed:", e));
+      .catch((e) => console.warn("Sarvam status check failed:", e));
   }, []);
 
   // Auto-scroll to bottom of messages
@@ -100,7 +100,7 @@ export function SungamBot() {
     const text = (textToSend || input).trim();
     if (!text || isLoading) return;
 
-    const userMsg: SungamMessage = {
+    const userMsg: SarvamMessage = {
       id: `usr_${Date.now()}`,
       role: "user",
       content: text,
@@ -117,9 +117,9 @@ export function SungamBot() {
         content: m.content,
       }));
 
-      const res = await sendSungamChat(text, history, selectedLang);
+      const res = await sendSarvamChat(text, history, selectedLang);
 
-      const botMsg: SungamMessage = {
+      const botMsg: SarvamMessage = {
         id: `bot_${Date.now()}`,
         role: "assistant",
         content: res.reply,
@@ -131,7 +131,7 @@ export function SungamBot() {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: any) {
-      const errorMsg: SungamMessage = {
+      const errorMsg: SarvamMessage = {
         id: `bot_err_${Date.now()}`,
         role: "assistant",
         content:
@@ -162,10 +162,10 @@ export function SungamBot() {
         setIsLoading(true);
 
         try {
-          const res = await sendSungamVoice(audioBlob, selectedLang);
+          const res = await sendSarvamVoice(audioBlob, selectedLang);
 
           // Add user's transcribed message
-          const userMsg: SungamMessage = {
+          const userMsg: SarvamMessage = {
             id: `usr_v_${Date.now()}`,
             role: "user",
             content: res.transcription || "[Voice Message]",
@@ -173,7 +173,7 @@ export function SungamBot() {
           };
 
           // Add bot response
-          const botMsg: SungamMessage = {
+          const botMsg: SarvamMessage = {
             id: `bot_v_${Date.now()}`,
             role: "assistant",
             content: res.reply,
@@ -191,7 +191,7 @@ export function SungamBot() {
             playAudio(botMsg.id, res.audio_base64);
           }
         } catch (e: any) {
-          const errorMsg: SungamMessage = {
+          const errorMsg: SarvamMessage = {
             id: `bot_err_${Date.now()}`,
             role: "assistant",
             content: "We couldn't hear or transcribe that recording clearly. Please try again or type your question.",
@@ -208,7 +208,7 @@ export function SungamBot() {
       setIsRecording(true);
     } catch (e) {
       console.warn("Microphone access denied or unsupported:", e);
-      alert("Microphone access is needed for voice input in SUNGAM BOT.");
+      alert("Microphone access is needed for voice input in SARVAM.");
     }
   };
 
@@ -230,7 +230,7 @@ export function SungamBot() {
     try {
       let audioData = b64Audio;
       if (!audioData && text) {
-        const ttsRes = await fetchSungamTTS(text.slice(0, 250), lang || selectedLang);
+        const ttsRes = await fetchSarvamTTS(text.slice(0, 250), lang || selectedLang);
         audioData = ttsRes.audio_base64;
       }
 
@@ -262,7 +262,7 @@ export function SungamBot() {
         <button
           onClick={() => setIsOpen(true)}
           className="group relative flex items-center gap-3 bg-[#111413] hover:bg-[#161B18] text-[#E8ECE9] border border-[#2B332E] hover:border-[#10b981] shadow-2xl px-4 py-3 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
-          aria-label="Open SUNGAM BOT"
+          aria-label="Open SARVAM Assistant"
         >
           {/* Glowing pulse indicator */}
           <span className="relative flex h-3 w-3">
@@ -272,7 +272,7 @@ export function SungamBot() {
 
           <div className="flex flex-col text-left">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold tracking-wider text-emerald-400 font-mono">SUNGAM BOT</span>
+              <span className="text-xs font-bold tracking-wider text-emerald-400 font-mono">SARVAM</span>
               <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-1 rounded font-mono">
                 AI
               </span>
@@ -297,7 +297,7 @@ export function SungamBot() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-[#E8ECE9] font-mono tracking-tight">SUNGAM BOT</h3>
+                  <h3 className="text-sm font-bold text-[#E8ECE9] font-mono tracking-tight">SARVAM</h3>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Connected to Sarvam & Neo4j" />
                 </div>
                 <p className="text-[10px] text-[#8C9590] tracking-wide">Your EV Intelligence Assistant</p>
@@ -326,7 +326,7 @@ export function SungamBot() {
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 rounded-md text-[#8C9590] hover:text-[#E8ECE9] hover:bg-[#202722] transition-colors"
-                title="Minimize SUNGAM BOT"
+                title="Minimize SARVAM"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -351,7 +351,7 @@ export function SungamBot() {
                   <p className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Hello Driver!
                   </p>
-                  I am <strong className="text-white">SUNGAM BOT</strong>. I combine <strong>Sarvam AI</strong> and{" "}
+                  I am <strong className="text-white">SARVAM</strong>. I combine <strong>Sarvam AI</strong> and{" "}
                   <strong>Neo4j Graph Intelligence</strong> with EVverse&apos;s deterministic physics to provide verified
                   battery calculations, corridor reachability, and charging stop recommendations.
                 </div>
@@ -394,11 +394,11 @@ export function SungamBot() {
                   {m.role === "assistant" && m.toolsUsed && m.toolsUsed.length > 0 && (
                     <div className="flex items-center gap-1 mb-1.5 text-[9px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded w-fit">
                       <ShieldCheck className="w-2.5 h-2.5" />
-                      {m.toolsUsed.includes("deterministic_journey_planner")
+                      {m.toolsUsed.includes("journey_feasibility")
                         ? "Deterministic Physics Engine"
-                        : m.toolsUsed.includes("neo4j_vehicle_service")
+                        : m.toolsUsed.includes("vehicle_details")
                         ? "Neo4j Vehicle & Connectors"
-                        : m.toolsUsed.includes("neo4j_station_catalog")
+                        : m.toolsUsed.includes("station_discovery")
                         ? "Neo4j Verified Stations"
                         : "Verified EVverse Intelligence"}
                     </div>
@@ -411,56 +411,56 @@ export function SungamBot() {
                   {m.dataCard && (
                     <div className="mt-2.5 pt-2 border-t border-[#2A332C] space-y-2">
                       {/* 1. Journey Feasibility Card */}
-                      {m.dataCard.type === "journey_feasibility" && (
+                      {m.dataCard.type === "journey_card" && (
                         <div className="p-2.5 rounded-lg bg-[#0E1210] border border-[#2A332C] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-mono text-[#8C9590]">FEASIBILITY VERDICT</span>
                             <span
                               className={`text-[10px] font-bold px-1.5 py-0.5 rounded font-mono ${
-                                m.dataCard.verdict === "SAFE"
+                                m.dataCard.data?.verdict === "SAFE_TO_DRIVE"
                                   ? "bg-emerald-950 text-emerald-400 border border-emerald-700"
                                   : "bg-red-950 text-red-400 border border-red-800"
                               }`}
                             >
-                              {m.dataCard.verdict}
+                              {m.dataCard.data?.verdict}
                             </span>
                           </div>
                           <div className="text-[11px] font-medium text-white">
-                            {m.dataCard.origin} → {m.dataCard.destination} ({m.dataCard.distance_km} km)
+                            {m.dataCard.data?.origin} → {m.dataCard.data?.destination} ({m.dataCard.data?.distance_km} km)
                           </div>
                           <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[#A6AFA9]">
-                            <div>Start SOC: <span className="text-white font-bold">{m.dataCard.start_soc}%</span></div>
-                            <div>Arrival SOC: <span className="text-white font-bold">{m.dataCard.arrival_soc ? `${m.dataCard.arrival_soc}%` : "Depleted"}</span></div>
+                            <div>Start SOC: <span className="text-white font-bold">{m.dataCard.data?.start_battery_pct}%</span></div>
+                            <div>Arrival SOC: <span className="text-white font-bold">{m.dataCard.data?.arrival_battery_pct != null ? `${m.dataCard.data.arrival_battery_pct}%` : "Depleted"}</span></div>
                           </div>
                         </div>
                       )}
 
                       {/* 2. Vehicle Details Card */}
-                      {m.dataCard.type === "vehicle_details" && (
+                      {m.dataCard.type === "vehicle_card" && (
                         <div className="p-2.5 rounded-lg bg-[#0E1210] border border-[#2A332C] space-y-1">
                           <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
                             <Car className="w-3.5 h-3.5 text-emerald-400" />
-                            {m.dataCard.make} {m.dataCard.model}
+                            {m.dataCard.data?.make} {m.dataCard.data?.model}
                           </div>
                           <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-[#A6AFA9] pt-1">
-                            <div>Battery: <span className="text-white">{m.dataCard.usable_kwh} kWh</span></div>
-                            <div>Current SOC: <span className="text-emerald-400 font-bold">{m.dataCard.current_battery_pct}%</span></div>
-                            <div>Range: <span className="text-white">{m.dataCard.wltp_range_km} km</span></div>
-                            <div>Plugs: <span className="text-white">{m.dataCard.connectors?.join(", ")}</span></div>
+                            <div>Battery: <span className="text-white">{m.dataCard.data?.usable_kwh} kWh</span></div>
+                            <div>Current SOC: <span className="text-emerald-400 font-bold">{m.dataCard.data?.current_battery_pct}%</span></div>
+                            <div>Range: <span className="text-white">{m.dataCard.data?.wltp_range_km} km</span></div>
+                            <div>Plugs: <span className="text-white">{m.dataCard.data?.supported_connectors?.join(", ")}</span></div>
                           </div>
                         </div>
                       )}
 
                       {/* 3. Charging Stations Card */}
-                      {m.dataCard.type === "charging_stations" && (
+                      {m.dataCard.type === "station_card" && (
                         <div className="p-2 rounded-lg bg-[#0E1210] border border-[#2A332C] space-y-1.5">
-                          <div className="text-[10px] font-mono text-[#8C9590]">VERIFIED STATIONS ({m.dataCard.city})</div>
+                          <div className="text-[10px] font-mono text-[#8C9590]">VERIFIED STATIONS ({m.dataCard.data?.corridor})</div>
                           <div className="space-y-1">
-                            {m.dataCard.stations?.map((st: any, sIdx: number) => (
+                            {m.dataCard.data?.stations?.slice(0, 3).map((st: any, sIdx: number) => (
                               <div key={sIdx} className="p-1.5 rounded bg-[#161B18] text-[10px] flex items-center justify-between">
                                 <div>
                                   <div className="font-semibold text-white">{st.name}</div>
-                                  <div className="text-[#8C9590]">{st.operator} • {st.connectors?.join(", ")}</div>
+                                  <div className="text-[#8C9590]">{st.operator || "Station"} • {st.connectors?.join(", ")}</div>
                                 </div>
                                 {st.power_kw && (
                                   <span className="text-emerald-400 font-mono font-bold">{st.power_kw} kW</span>
@@ -508,7 +508,7 @@ export function SungamBot() {
             {isLoading && (
               <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#181D1A] text-[#8C9590] border border-[#2A332C] w-fit">
                 <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-[11px] font-mono">Sungam Bot is calculating...</span>
+                <span className="text-[11px] font-mono">Sarvam AI is calculating...</span>
               </div>
             )}
 

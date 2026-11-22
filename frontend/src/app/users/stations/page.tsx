@@ -27,7 +27,7 @@ import { StationDetailSheet } from "@/components/driver/StationDetailSheet";
 import { ChargingSafetyModal } from "@/components/driver/ChargingSafetyModal";
 import { LiveDataSourceSheet } from "@/components/driver/LiveDataSourceSheet";
 import { NavigationHUD } from "@/components/driver/NavigationHUD";
-import { SungamBot } from "@/components/driver/SungamBot";
+import { SarvamAssistant } from "@/components/driver/SarvamAssistant";
 import {
   fetchRoadRoute,
   type RoadRoute,
@@ -1713,8 +1713,8 @@ export default function EVVerseDriverPage() {
         </div>
       </div>
 
-      {/* ── SUNGAM BOT Conversational EV Intelligence Assistant ── */}
-      <SungamBot />
+      {/* ── SARVAM Conversational EV Intelligence Assistant ── */}
+      <SarvamAssistant />
     </div>
   );
 }
