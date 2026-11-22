@@ -24,6 +24,7 @@ import {
   OfflineNotice,
 } from "@/components/driver/StatusStates";
 import { StationDetailSheet } from "@/components/driver/StationDetailSheet";
+import { ChargingSafetyModal } from "@/components/driver/ChargingSafetyModal";
 import { LiveDataSourceSheet } from "@/components/driver/LiveDataSourceSheet";
 import { NavigationHUD } from "@/components/driver/NavigationHUD";
 import {
@@ -170,7 +171,9 @@ export default function EVVerseDriverPage() {
         requestAnimationFrame(() => {
           if (shouldManage) setIsVehicleManagerOpen(true);
           if (shouldDrawer) setIsDrawerOpen(true);
-          if (tabParam === "profile") setActiveTab("profile");
+          if (tabParam && ["home", "explore", "journeys", "charging", "profile", "garage"].includes(tabParam)) {
+            setActiveTab(tabParam as DriverTab);
+          }
         });
       }
     }
@@ -244,6 +247,7 @@ export default function EVVerseDriverPage() {
   const [chargeCurrentKw, setChargeCurrentKw] = useState(0);
   const [chargeCost, setChargeCost] = useState(0);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [isSafetyGuideOpen, setIsSafetyGuideOpen] = useState(false);
   const chargeIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
 
 
@@ -1598,6 +1602,7 @@ export default function EVVerseDriverPage() {
                       onStopCharge={stopChargingSession}
                       showReceiptModal={showReceiptModal}
                       onCloseReceiptModal={() => setShowReceiptModal(false)}
+                      onOpenSafetyGuide={() => setIsSafetyGuideOpen(true)}
                     />
                   </div>
                 )}
@@ -1695,6 +1700,12 @@ export default function EVVerseDriverPage() {
                 activeVehicleSoc={currentBatteryPct}
                 vehicleWltpKm={activeVehicle.wltpRangeKm}
                 activeVehicle={activeVehicle}
+              />
+
+              {/* ── Dedicated Charging Safety Precautions & Diagram Modal (Contained Strictly in Phone Frame) ── */}
+              <ChargingSafetyModal
+                isOpen={isSafetyGuideOpen}
+                onClose={() => setIsSafetyGuideOpen(false)}
               />
             </div>
           </div>
