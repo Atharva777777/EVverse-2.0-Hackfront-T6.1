@@ -19,7 +19,7 @@ export interface EcosystemSession {
   vehicleName: string;
   vehicleId: string;
   vehicleBatteryPct: number;
-  paymentRail: 'upi' | 'monad';
+  paymentRail: 'upi' | 'monad' | 'card' | 'netbanking';
   paymentAmount: string;
   paymentRef: string; // UPI UTR or Monad TxHash
   pinCode: string;
@@ -236,7 +236,7 @@ export function registerDriverBooking(booking: {
   connectorType?: string;
   vehicleName?: string;
   vehicleId?: string;
-  paymentRail?: 'upi' | 'monad';
+  paymentRail?: 'upi' | 'monad' | 'card' | 'netbanking';
   paymentAmount?: string;
   paymentRef?: string;
   pinCode?: string;
