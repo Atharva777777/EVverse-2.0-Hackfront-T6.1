@@ -1,0 +1,133 @@
+{
+  "total": 21,
+  "passed": 21,
+  "failed": 0,
+  "results": [
+    {
+      "suite": "Drawer",
+      "testName": "Drawer opens on menu button click",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "Drawer",
+      "testName": "Drawer navigates to Journeys tab",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "Drawer",
+      "testName": "Drawer navigates to Charging tab",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "Drawer",
+      "testName": "Drawer navigates to Profile tab",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "Drawer",
+      "testName": "Drawer navigates back to Home tab",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "Drawer",
+      "testName": "Close button dismisses drawer",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Destination pill selection activates Electric Blue state",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Destination switch back to Lonavala operates correctly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Battery reserve selection (20%) highlights Ice Blue/Electric Blue",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Battery slider change dynamically updates SoC percentage",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Journey physics calculation renders verdict successfully",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "JourneyPlanner",
+      "testName": "Start Trip Navigation button rendered with Electric Blue (#0284C7)",
+      "passed": true,
+      "details": "Start to Lonavala"
+    },
+    {
+      "suite": "MapFilters",
+      "testName": "Filter buttons visible on explore map",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "MapFilters",
+      "testName": "Fast filter activates Ice Blue/Electric Blue theme",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "MapFilters",
+      "testName": "Compatible filter toggles state correctly",
+      "passed": true,
+      "details": "from true to false"
+    },
+    {
+      "suite": "ChargingConsole",
+      "testName": "Start Charging button is visible in Electric Blue",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "ChargingConsole",
+      "testName": "Live charging simulation starts: CHARGING state and Stop button visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "ChargingConsole",
+      "testName": "Stop Charging successfully ends session",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "VehicleManager",
+      "testName": "Switch vehicle button present in Cockpit",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "VehicleManager",
+      "testName": "Vehicle Management wizard opens (Step 1)",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "suite": "VehicleManager",
+      "testName": "Vehicle Management closes and returns to Cockpit",
+      "passed": true,
+      "details": ""
+    }
+  ]
+}

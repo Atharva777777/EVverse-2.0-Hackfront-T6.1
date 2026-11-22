@@ -268,6 +268,20 @@ def init_driver_db() -> None:
 
                 CREATE INDEX IF NOT EXISTS idx_driver_bookings_station ON driver_bookings(station_id);
                 CREATE INDEX IF NOT EXISTS idx_driver_bookings_driver ON driver_bookings(driver_id);
+
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    location TEXT DEFAULT 'Pune, Maharashtra',
+                    user_type TEXT DEFAULT 'driver',
+                    is_admin INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
                 CREATE INDEX IF NOT EXISTS idx_driver_bookings_status ON driver_bookings(payment_status);
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_bookings_tx_hash ON driver_bookings(tx_hash) WHERE tx_hash IS NOT NULL;
             """)
@@ -888,4 +902,182 @@ def list_driver_bookings(driver_id: str, limit: int = 20) -> List[Dict[str, Any]
             (driver_id, limit),
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+# ── User Accounts & Demo Seeding ──────────────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    """Hash password using bcrypt."""
+    import bcrypt
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against bcrypt hash."""
+    import bcrypt
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Retrieve user by email (without password hash)."""
+    if not email:
+        return None
+    init_driver_db()
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT id, email, name, location, user_type, is_admin, created_at, updated_at FROM users WHERE LOWER(email) = LOWER(?)",
+            (email.strip(),),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def get_user_auth_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Internal: Retrieve user with password hash for authentication."""
+    if not email:
+        return None
+    init_driver_db()
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT id, email, password_hash, name, location, user_type, is_admin FROM users WHERE LOWER(email) = LOWER(?)",
+            (email.strip(),),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def create_or_update_user(
+    user_id: str,
+    email: str,
+    password: Optional[str] = None,
+    password_hash: Optional[str] = None,
+    name: str = "EVverse User",
+    location: str = "Pune, Maharashtra",
+    user_type: str = "driver",
+    is_admin: bool = False,
+) -> Dict[str, Any]:
+    """Idempotently create or update a user account in SQLite."""
+    init_driver_db()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    norm_email = email.strip().lower()
+
+    if password:
+        pwd_hash = hash_password(password)
+    elif password_hash:
+        pwd_hash = password_hash
+    else:
+        raise ValueError("Must provide either password or password_hash")
+
+    with _lock:
+        with get_db_connection() as conn:
+            existing = conn.execute("SELECT id FROM users WHERE LOWER(email) = ?", (norm_email,)).fetchone()
+            if existing:
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET name = ?, location = ?, user_type = ?, is_admin = ?, password_hash = ?, updated_at = ?
+                    WHERE LOWER(email) = ?
+                    """,
+                    (name, location, user_type, 1 if is_admin else 0, pwd_hash, now_iso, norm_email),
+                )
+                uid = existing["id"]
+            else:
+                uid = user_id or f"usr_{int(datetime.now(timezone.utc).timestamp())}"
+                conn.execute(
+                    """
+                    INSERT INTO users (id, email, password_hash, name, location, user_type, is_admin, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (uid, norm_email, pwd_hash, name, location, user_type, 1 if is_admin else 0, now_iso, now_iso),
+                )
+            conn.commit()
+
+    return {
+        "id": uid,
+        "email": norm_email,
+        "name": name,
+        "location": location,
+        "user_type": user_type,
+        "is_admin": is_admin,
+    }
+
+
+def seed_demo_account(plain_password: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Seeds the verified demo account into SQLite idempotently:
+      Name: EVverse Demo User
+      Email: demo@evverse.app
+      Location: Pune, Maharashtra
+      User Type: driver (non-admin)
+      Vehicle: Tata Nexon EV
+    """
+    import secrets
+    init_driver_db()
+
+    # Generate secure credential or load from environment
+    env_pwd = os.environ.get("DEMO_USER_PASSWORD")
+    final_password = plain_password or env_pwd or f"EVverse#{secrets.token_urlsafe(12)}!"
+
+    # 1. Create User in SQLite
+    user = create_or_update_user(
+        user_id="usr_demo_pune",
+        email="demo@evverse.app",
+        password=final_password,
+        name="EVverse Demo User",
+        location="Pune, Maharashtra",
+        user_type="driver",
+        is_admin=False,
+    )
+
+    # 2. Ensure driver_sessions record exists for token-based APIs
+    demo_driver_id = "demo_driver_pune"
+    demo_token = "demo_token_pune_nexon"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with _lock:
+        with get_db_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO driver_sessions (driver_id, token, name, email, created_at, last_seen_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(driver_id) DO UPDATE SET
+                    token = excluded.token,
+                    name = excluded.name,
+                    email = excluded.email,
+                    last_seen_at = excluded.last_seen_at
+                """,
+                (demo_driver_id, demo_token, user["name"], user["email"], now_iso, now_iso),
+            )
+            # 3. Ensure Tata Nexon EV is active for this driver
+            nexon = next((v for v in DEFAULT_SEED_VEHICLES if v["id"] == "tata-nexon-ev"), DEFAULT_SEED_VEHICLES[0])
+            conn.execute(
+                """
+                INSERT INTO driver_vehicles (
+                    id, driver_id, make, model, year, image, battery_kwh, usable_kwh,
+                    current_battery_pct, wltp_range_km, efficiency_kwh100km, max_dc_speed_kw,
+                    max_ac_speed_kw, plug_type, plug_image, vin, soh_pct, is_active,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                ON CONFLICT(id, driver_id) DO UPDATE SET
+                    is_active = 1,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    nexon["id"], demo_driver_id, nexon["make"], nexon["model"], nexon["year"],
+                    nexon.get("image"), nexon["battery_kwh"], nexon["usable_kwh"],
+                    nexon["current_battery_pct"], nexon["wltp_range_km"], nexon["efficiency_kwh100km"],
+                    nexon["max_dc_speed_kw"], nexon["max_ac_speed_kw"], nexon["plug_type"],
+                    nexon.get("plug_image"), nexon.get("vin"), nexon["soh_pct"], now_iso, now_iso,
+                ),
+            )
+            conn.commit()
+
+    return {
+        "user": user,
+        "driver_id": demo_driver_id,
+        "token": demo_token,
+        "vehicle_id": "tata-nexon-ev",
+        "password": final_password,
+    }
+
 

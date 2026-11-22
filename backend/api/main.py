@@ -44,6 +44,8 @@ from backend.api.routers import live_data
 from backend.api.routers import driver
 from backend.api.routers import trip
 from backend.api.routers import journey
+from backend.api.routers import graph
+from backend.api.routers import sarvam_assistant
 from backend.data.driver_db import init_driver_db
 
 
@@ -59,6 +61,8 @@ async def lifespan(app: FastAPI):
     """
     try:
         init_driver_db()
+        from backend.data.driver_db import seed_demo_account
+        seed_demo_account()
     except Exception as exc:
         print(f"[EVision] Driver DB init warning: {exc}")
 
@@ -155,4 +159,16 @@ app.include_router(
     journey.router,
     prefix="/api/v1/journey",
     tags=["journey"],
+)
+
+app.include_router(
+    graph.router,
+    prefix="/api/v1/graph",
+    tags=["graph"],
+)
+
+app.include_router(
+    sarvam_assistant.router,
+    prefix="/api/v1/sarvam",
+    tags=["sarvam"],
 )

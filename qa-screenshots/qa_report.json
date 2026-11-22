@@ -1,0 +1,108 @@
+{
+  "timestamp": "2026-11-21T20:34:06.242Z",
+  "browser": "Google Chrome (Chromium via Playwright)",
+  "viewportsTested": [
+    {
+      "name": "320x568",
+      "width": 320,
+      "height": 568
+    },
+    {
+      "name": "375x667",
+      "width": 375,
+      "height": 667
+    },
+    {
+      "name": "390x844",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "430x932",
+      "width": 430,
+      "height": 932
+    },
+    {
+      "name": "1440x900",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "routesTested": [
+    {
+      "path": "/",
+      "name": "landing"
+    },
+    {
+      "path": "/users",
+      "name": "users_dashboard"
+    },
+    {
+      "path": "/users/stations",
+      "name": "users_stations"
+    },
+    {
+      "path": "/investor",
+      "name": "investor_dashboard"
+    },
+    {
+      "path": "/map",
+      "name": "spatial_map"
+    },
+    {
+      "path": "/investor/map",
+      "name": "investor_map"
+    },
+    {
+      "path": "/station-owners",
+      "name": "station_owners"
+    },
+    {
+      "path": "/users/knowledge",
+      "name": "knowledge_base"
+    }
+  ],
+  "overflowResults": [],
+  "interactionLog": [
+    {
+      "step": "Load Home Cockpit",
+      "status": "PASS",
+      "detail": "Home view active with vehicle specs and SoC cluster"
+    },
+    {
+      "step": "Bottom Nav -> Explore (Map)",
+      "status": "PASS",
+      "detail": "Map viewport rendered with search & filter pills"
+    },
+    {
+      "step": "Station Marker Selection",
+      "status": "SKIPPED",
+      "detail": "No Leaflet markers rendered within timeout"
+    },
+    {
+      "step": "Journey Planner Simulation",
+      "status": "PASS",
+      "detail": "Changed destination & battery SoC. Feasibility updated. Start button visible: false"
+    },
+    {
+      "step": "Bottom Nav -> Charging Console",
+      "status": "PASS",
+      "detail": "Charging console active. Start Charging button visible: true"
+    },
+    {
+      "step": "Bottom Nav -> Profile",
+      "status": "PASS",
+      "detail": "Driver Profile view loaded with active fleet specs: true"
+    },
+    {
+      "step": "Vehicle Manager Wizard",
+      "status": "PASS",
+      "detail": "Wizard opened at Step 1 (Browse Catalogue) and closed cleanly"
+    },
+    {
+      "step": "Investor Deploy Stall Modal",
+      "status": "PASS",
+      "detail": "Modal opened. Box height: 587px fits within 667px viewport (true)"
+    }
+  ]
+}

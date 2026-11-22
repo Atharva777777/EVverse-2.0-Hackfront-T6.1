@@ -252,6 +252,82 @@ async def chat_json(system: str, user: str, *, max_tokens: int = 700, temperatur
     return extract_json_object(content)
 
 
+async def chat_conversation(
+    messages: List[Dict[str, str]],
+    *,
+    max_tokens: int = 1000,
+    temperature: float = 0.3,
+) -> str:
+    """Multi-turn conversational completion with Sarvam 105B."""
+    cfg = load_settings()
+
+    async def run(opts: Dict[str, Any]) -> Any:
+        client = _make_client(cfg.api_key or "")
+        return await client.chat.completions(
+            model=cfg.chat_model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            request_options=opts,
+        )
+
+    resp = await _call("chat_conv", cfg.chat_model, run)
+    try:
+        choice = resp.choices[0]
+        content = choice.message.content or ""
+    except (AttributeError, IndexError, TypeError) as exc:
+        raise SarvamError("bad_output", "Unexpected response from Sarvam.") from exc
+    cleaned = _THINK.sub("", content).strip()
+    if not cleaned:
+        raise SarvamError("bad_output", "The model's reply was empty.")
+    return cleaned
+
+
+DEFAULT_TTS_MODEL = "bulbul:v3"
+
+
+async def text_to_speech(
+    text: str,
+    language_code: str = "en-IN",
+    speaker: str = "kavya",
+) -> str:
+    """Generate audio speech using Sarvam Bulbul:v3. Returns base64 audio string."""
+    if not text or not text.strip():
+        raise SarvamError("bad_request", "No text provided for speech generation.")
+
+    cfg = load_settings()
+    lang = language_code if language_code in SUPPORTED_LANGUAGES else "en-IN"
+
+    valid_speakers = {
+        "kavya", "aditya", "ritu", "priya", "rahul", "pooja", "rohan", "simran",
+        "amit", "dev", "ishita", "shreya", "ratan", "varun", "manan", "sumit",
+        "roopa", "kabir", "aayan", "shubh", "advait", "anand", "tanya", "tarun",
+        "sunny", "mani", "gokul", "vijay", "shruti", "suhani", "mohit", "kavitha",
+        "rehan", "soham", "rupali",
+    }
+    chosen_speaker = speaker if speaker in valid_speakers else "kavya"
+    clean_prompt = text.strip()[:500]
+
+    async def run(opts: Dict[str, Any]) -> Any:
+        client = _make_client(cfg.api_key or "")
+        return await client.text_to_speech.convert(
+            text=clean_prompt,
+            language_code=lang,
+            speaker=chosen_speaker,
+            model=DEFAULT_TTS_MODEL,
+            request_options=opts,
+        )
+
+    resp = await _call("tts", DEFAULT_TTS_MODEL, run)
+    try:
+        audios = getattr(resp, "audios", [])
+        if audios and len(audios) > 0:
+            return audios[0]
+    except Exception as exc:
+        raise SarvamError("bad_output", "Unexpected audio response from Sarvam.") from exc
+    raise SarvamError("bad_output", "No audio data generated.")
+
+
 @dataclass(frozen=True)
 class Transcript:
     text: str
