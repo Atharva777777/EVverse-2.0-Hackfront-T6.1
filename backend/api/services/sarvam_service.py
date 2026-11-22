@@ -268,7 +268,11 @@ async def transcribe(audio: bytes, content_type: str = "audio/webm", language_co
         raise SarvamError("bad_request", "Unsupported language.")
 
     cfg = load_settings()
-    ext = {"webm": "webm", "ogg": "ogg", "mp4": "mp4", "mpeg": "mp3", "wav": "wav", "x-wav": "wav"}.get(
+    ext = {
+        "webm": "webm", "ogg": "ogg", "mp4": "mp4", "m4a": "m4a",
+        "mpeg": "mp3", "mp3": "mp3", "wav": "wav", "x-wav": "wav",
+        "aac": "aac", "flac": "flac",
+    }.get(
         content_type.split("/")[-1].split(";")[0].strip().lower(), "webm"
     )
 
